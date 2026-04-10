@@ -1,0 +1,1594 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOS Exam Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0d14;--bg2:#111520;--bg3:#181d2e;--bg4:#1e253a;
+  --border:#ffffff12;--border2:#ffffff1e;--border3:#ffffff2a;
+  --text:#e8eaf0;--text2:#9ba3b8;--text3:#5c6480;
+  --accent:#4f7cff;--accent2:#6b93ff;--accent-bg:#4f7cff15;
+  --green:#22c55e;--green-bg:#22c55e14;
+  --red:#ef4444;--red-bg:#ef444414;
+  --amber:#f59e0b;--amber-bg:#f59e0b14;
+  --purple:#a855f7;--purple-bg:#a855f714;
+  --radius:10px;--radius-lg:16px;--radius-xl:24px;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+}
+body{font-family:'Onest',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+#app{min-height:100vh}
+
+/* Layout */
+.app-shell{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:20px 0;position:fixed;top:0;left:0;height:100vh;z-index:100;transition:transform .2s}
+.sidebar.hidden{transform:translateX(-220px)}
+.main-content{flex:1;margin-left:220px;transition:margin .2s}
+.main-content.full{margin-left:0}
+.page{padding:28px;max-width:1100px}
+
+/* Sidebar */
+.logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.logo-text{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.5px}
+.logo-sub{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--text2);font-size:13.5px;font-weight:500;border-radius:0;transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover{color:var(--text);background:var(--bg3)}
+.nav-item.active{color:var(--accent2);background:var(--accent-bg);border-left-color:var(--accent)}
+.nav-icon{width:18px;text-align:center;flex-shrink:0}
+.nav-section{padding:8px 20px 4px;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-top:8px}
+.user-block{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--accent2);flex-shrink:0}
+.user-info{display:flex;align-items:center;gap:10px}
+.user-name{font-size:13px;font-weight:500;color:var(--text)}
+.user-role{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+
+/* Auth */
+.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
+.auth-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(79,124,255,.08) 0%,transparent 70%)}
+.auth-grid{position:absolute;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.4}
+.auth-card{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-xl);padding:40px;width:420px;position:relative}
+.auth-title{font-size:26px;font-weight:700;margin-bottom:4px;color:var(--text)}
+.auth-sub{color:var(--text2);margin-bottom:28px;font-size:14px}
+.auth-tabs{display:flex;background:var(--bg3);border-radius:var(--radius);padding:4px;margin-bottom:24px;gap:4px}
+.auth-tab{flex:1;padding:8px;text-align:center;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s}
+.auth-tab.active{background:var(--bg4);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+
+/* Forms */
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;letter-spacing:.02em}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 14px;color:var(--text);font-size:14px;font-family:'Onest',sans-serif;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:vertical;min-height:80px}
+.field select option{background:var(--bg3)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius);font-size:13.5px;font-weight:600;cursor:pointer;border:none;font-family:'Onest',sans-serif;transition:all .15s;text-decoration:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2)}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{background:var(--bg4);border-color:var(--border3)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-success{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.btn-sm{padding:6px 12px;font-size:12.5px}
+.btn-lg{padding:13px 28px;font-size:15px;border-radius:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-full{width:100%;justify-content:center}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
+.card-sm{padding:14px}
+.card + .card{margin-top:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:600;color:var(--text)}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.stat-label{font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:700;color:var(--text);letter-spacing:-1px}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:3px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-amber{background:var(--amber-bg);color:var(--amber)}
+.badge-blue{background:var(--accent-bg);color:var(--accent2)}
+.badge-purple{background:var(--purple-bg);color:var(--purple)}
+
+/* Progress */
+.progress-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .3s}
+.progress-fill.green{background:var(--green)}
+.progress-fill.amber{background:var(--amber)}
+.progress-fill.red{background:var(--red)}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-bottom:1px solid var(--border);text-align:left}
+td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13.5px;color:var(--text2);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+
+/* Test mode */
+.test-shell{min-height:100vh;display:flex;flex-direction:column;background:var(--bg)}
+.test-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.test-timer{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:600;color:var(--text)}
+.test-timer.warning{color:var(--amber)}
+.test-timer.danger{color:var(--red);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+.test-body{flex:1;padding:28px;max-width:860px;margin:0 auto;width:100%}
+.question-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;margin-bottom:20px}
+.q-header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.q-num{font-size:12px;font-weight:700;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
+.q-subject{font-size:12px;color:var(--text3)}
+.q-subject-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.q-body{font-size:15px;color:var(--text);line-height:1.7;margin-bottom:20px}
+.q-img{max-width:100%;border-radius:var(--radius);margin:14px 0;border:1px solid var(--border)}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{display:flex;align-items:flex-start;gap:13px;padding:13px 16px;border-radius:var(--radius);border:1.5px solid var(--border);cursor:pointer;transition:all .15s;background:var(--bg3)}
+.option:hover{border-color:var(--accent);background:var(--accent-bg)}
+.option.selected{border-color:var(--accent);background:var(--accent-bg)}
+.option.correct{border-color:var(--green);background:var(--green-bg)}
+.option.incorrect{border-color:var(--red);background:var(--red-bg)}
+.option-letter{width:26px;height:26px;border-radius:50%;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0}
+.option.selected .option-letter{background:var(--accent);color:#fff}
+.option.correct .option-letter{background:var(--green);color:#fff}
+.option.incorrect .option-letter{background:var(--red);color:#fff}
+.option-text{font-size:14px;color:var(--text);line-height:1.5;padding-top:2px}
+
+/* Nav pills */
+.q-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.q-dot{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);color:var(--text3);background:var(--bg3);transition:all .15s}
+.q-dot:hover{border-color:var(--accent2);color:var(--accent2)}
+.q-dot.answered{background:var(--accent-bg);border-color:var(--accent);color:var(--accent2)}
+.q-dot.current{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* Result */
+.result-header{text-align:center;padding:40px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-xl);margin-bottom:24px}
+.result-score{font-size:72px;font-weight:800;letter-spacing:-3px;background:linear-gradient(135deg,var(--accent2),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.result-label{font-size:16px;color:var(--text2);margin-top:4px}
+.subject-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.subject-name{width:260px;font-size:13px;color:var(--text2);flex-shrink:0}
+.subject-score-text{font-size:13px;font-weight:600;color:var(--text);width:60px;text-align:right;flex-shrink:0}
+
+/* Review card */
+.review-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:12px}
+.review-card.wrong{border-left:3px solid var(--red)}
+.review-card.right{border-left:3px solid var(--green)}
+.q-chapter{background:var(--bg3);border-radius:var(--radius);padding:14px;margin-top:12px;font-size:13px;color:var(--text2);border-left:3px solid var(--amber)}
+
+/* Import */
+.drop-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:40px;text-align:center;cursor:pointer;transition:all .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-bg)}
+.drop-zone-icon{font-size:36px;margin-bottom:10px;color:var(--text3)}
+.import-log{background:var(--bg3);border-radius:var(--radius);padding:14px;margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);max-height:200px;overflow-y:auto}
+.log-ok{color:var(--green)}
+.log-err{color:var(--red)}
+.log-warn{color:var(--amber)}
+
+/* Question editor */
+.option-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.option-tag{width:28px;height:28px;border-radius:6px;background:var(--bg4);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text2);flex-shrink:0}
+
+/* LaTeX preview */
+.latex-preview{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-top:8px;min-height:40px}
+
+/* Dividers */
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+/* Chart area */
+.chart-wrap{position:relative;height:200px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:14px 18px;font-size:13.5px;color:var(--text);box-shadow:var(--shadow);z-index:9999;display:flex;align-items:center;gap:10px;animation:slideIn .25s ease;max-width:360px}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--accent)}
+@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* Search */
+.search-input{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:9px 14px 9px 36px;color:var(--text);font-size:14px;outline:none;width:100%;font-family:'Onest',sans-serif}
+.search-wrap{position:relative}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* Misc */
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}.gap-5{gap:20px}
+.mt-1{margin-top:4px}.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mt-5{margin-top:20px}.mt-6{margin-top:24px}
+.mb-1{margin-bottom:4px}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:12px}.mb-4{margin-bottom:16px}.mb-6{margin-bottom:24px}
+.text-sm{font-size:12.5px}.text-xs{font-size:11.5px}.text-muted{color:var(--text2)}.text-hint{color:var(--text3)}
+.font-mono{font-family:'JetBrains Mono',monospace}.font-bold{font-weight:700}.font-medium{font-weight:500}
+.w-full{width:100%}.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.katex-render{font-size:15px}
+
+@media(max-width:768px){
+  .sidebar{transform:translateX(-220px)}.main-content{margin-left:0!important}
+  .grid-2,.grid-3{grid-template-columns:1fr}.stats-grid{grid-template-columns:repeat(2,1fr)}
+  .page{padding:16px}.test-body{padding:16px}
+  .subject-name{width:140px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ========== STATE ==========
+const SUBJECTS = [
+  {id:'math',name:'Mathematical Analysis & Analytic Geometry',short:'Math Analysis',color:'#4f7cff',count:15},
+  {id:'linalg',name:'Linear Algebra',short:'Linear Algebra',color:'#a855f7',count:6},
+  {id:'ode',name:'Ordinary Differential Equations',short:'ODE',color:'#22c55e',count:5},
+  {id:'discrete',name:'Discrete Mathematics',short:'Discrete Math',color:'#f59e0b',count:6},
+  {id:'stats',name:'Mathematical & Applied Statistics',short:'Statistics',color:'#ef4444',count:8},
+];
+
+const SUBJECT_COLORS={math:'#4f7cff',linalg:'#a855f7',ode:'#22c55e',discrete:'#f59e0b',stats:'#ef4444'};
+
+const SUPABASE_URL = 'https://mzigiwsajudpuxfudguh.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16aWdpd3NhanVkcHV4ZnVkZ3VoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3MzExODgsImV4cCI6MjA5MTMwNzE4OH0.mnbjYbqe4iPiL0VZaI_hME8vStHQ8aqknvI0sxodxJc';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function ss(k){try{return JSON.parse(sessionStorage.getItem(k))}catch{return null}}
+function ssSet(k,v){try{if(v===null)sessionStorage.removeItem(k);else sessionStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+const INIT_USERS = [
+  {id:1,username:'admin',password:'admin123',role:'admin',name:'Administrator'},
+  {id:2,username:'student',password:'student123',role:'student',name:'Demo Student'}
+];
+
+const INIT_QUESTIONS = [
+  {id:100,subject:'linalg',question:'Solve the following system of linear equations: $x_1 + 5x_2 = 7$; $-2x_1 - 7x_2 = -5$.',image:null,options:['(-8, 3)','(8, -3)','(-3, 8)','(2, 1)','No solution'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:101,subject:'linalg',question:'Find the point $(x_1, x_2)$ that lies on the intersection of the lines $x_1 + 5x_2 = 7$ and $x_1 - 2x_2 = -2$.',image:null,options:['$$\\left(\\frac{4}{7}, \\frac{9}{7}\\right)$$','$$\\left(\\frac{9}{7}, \\frac{4}{7}\\right)$$','(-8, 3)','(1, 1)','No intersection'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:102,subject:'linalg',question:'Determine if the system with the following augmented matrix is consistent: $$\\begin{bmatrix} 1 & 7 & 3 & -4 \\\\ 0 & 1 & -1 & 3 \\\\ 0 & 0 & 0 & 1 \\\\ 0 & 0 & 1 & -2 \\end{bmatrix}$$.',image:null,options:['Inconsistent (no solution)','Consistent with a unique solution','Consistent with infinitely many solutions','(1, 2, 3, 4)','(0, 0, 0, 0)'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:103,subject:'linalg',question:'Solve the following linear system: $x_2 + 4x_3 = -5$; $x_1 + 3x_2 + 5x_3 = -2$; $3x_1 + 7x_2 + 7x_3 = 6$.',image:null,options:['Inconsistent','(5, 3, -1)','(1, 0, -2)','(-8, 3, 0)','(0, 0, 0)'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:104,subject:'linalg',question:'Solve the system: $x_1 - 3x_3 = 8$; $2x_1 + 2x_2 + 9x_3 = 7$; $x_2 + 5x_3 = -2$.',image:null,options:['(5, 3, -1)','(3, 5, -1)','(-1, 3, 5)','Inconsistent','(0, 0, 0)'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:105,subject:'linalg',question:'Determine the value of $h$ such that the matrix $$\\begin{bmatrix} 1 & h & 4 \\\\ 3 & 6 & 8 \\end{bmatrix}$$ is the augmented matrix of a consistent linear system.',image:null,options:['h \\neq 2','h = 2','h = 0','h = 1','All real values of h'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:106,subject:'linalg',question:'Find an equation involving $g$, $h$, and $k$ that makes the following augmented matrix correspond to a consistent system: $$\\begin{bmatrix} 1 & -4 & 7 & g \\\\ 0 & 3 & -5 & h \\\\ -2 & 5 & -9 & k \\end{bmatrix}$$.',image:null,options:['k + 2g + h = 0','k - 2g + h = 0','g + h + k = 0','2k + g - h = 0','The system is always consistent'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:107,subject:'linalg',question:'Find the general solution for the system whose augmented matrix is $$\\begin{bmatrix} 1 & 3 & 4 & 7 \\\\ 3 & 9 & 7 & 6 \\end{bmatrix}$$.',image:null,options:['x_1 = -5 - 3x_2, x_2 \\text{ is free}, x_3 = 3','x_1 = 5 + 3x_2, x_2 = 0, x_3 = 1','x_1 = 1, x_2 = 2, x_3 = 3','Inconsistent','x_1 = 0, x_2 \\text{ is free}, x_3 = 0'],correct:0,chapter:'chapter 1.2 Linear Algebra'},
+  {id:108,subject:'linalg',question:'Determine the value of $h$ for which the following matrix is the augmented matrix of a consistent system: $$\\begin{bmatrix} 2 & 3 & h \\\\ 4 & 6 & 7 \\end{bmatrix}$$.',image:null,options:['h = 3.5','h \\neq 3.5','h = 7','h = 2','No such h exists'],correct:0,chapter:'chapter 1.2 Linear Algebra'},
+  {id:109,subject:'linalg',question:'Given $\\mathbf{u} = \\begin{bmatrix} -1 \\\\ 2 \\end{bmatrix}$ and $\\mathbf{v} = \\begin{bmatrix} -3 \\\\ -1 \\end{bmatrix}$, compute $\\mathbf{u} - 2\\mathbf{v}$.',image:null,options:['$$\\begin{bmatrix} 5 \\\\ 4 \\end{bmatrix}$$','$$\\begin{bmatrix} -4 \\\\ 1 \\end{bmatrix}$$','$$\\begin{bmatrix} -7 \\\\ 0 \\end{bmatrix}$$','$$\\begin{bmatrix} 2 \\\\ 3 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix}$$'],correct:0,chapter:'chapter 1.3 Linear Algebra'},
+  {id:110,subject:'linalg',question:'Find the values of $x_1$ and $x_2$ that satisfy the vector equation $x_1 \\begin{bmatrix} 6 \\\\ -1 \\\\ 5 \\end{bmatrix} + x_2 \\begin{bmatrix} -3 \\\\ 4 \\\\ 0 \\end{bmatrix} = \\begin{bmatrix} 1 \\\\ -7 \\\\ -5 \\end{bmatrix}$.',image:null,options:['x_1 = -1, x_2 = -2','x_1 = 1, x_2 = 2','x_1 = 2, x_2 = 3','No solution','x_1 = 0, x_2 = 0'],correct:0,chapter:'chapter 1.3 Linear Algebra'},
+  {id:111,subject:'linalg',question:'Determine if $\\mathbf{b} = \\begin{bmatrix} 2 \\\\ -1 \\\\ 6 \\end{bmatrix}$ is a linear combination of $\\mathbf{a_1} = \\begin{bmatrix} 1 \\\\ -2 \\\\ 0 \\end{bmatrix}$, $\\mathbf{a_2} = \\begin{bmatrix} 0 \\\\ 1 \\\\ 2 \\end{bmatrix}$, and $\\mathbf{a_3} = \\begin{bmatrix} 5 \\\\ -6 \\\\ 8 \\end{bmatrix}$.',image:null,options:['No, the system is inconsistent','Yes, with infinitely many weights','Yes, with unique weights','Only if weights are zero','Yes, b = a1 + a2 + a3'],correct:0,chapter:'chapter 1.3 Linear Algebra'},
+  {id:112,subject:'linalg',question:'For what value of $h$ is $\\mathbf{b} = \\begin{bmatrix} 4 \\\\ 1 \\\\ h \\end{bmatrix}$ in the plane spanned by $\\mathbf{a_1} = \\begin{bmatrix} 1 \\\\ 4 \\\\ -2 \\end{bmatrix}$ and $\\mathbf{a_2} = \\begin{bmatrix} -2 \\\\ -3 \\\\ 7 \\end{bmatrix}$?',image:null,options:['h = -17','h = 17','h = 0','h = -2','All real h'],correct:0,chapter:'chapter 1.3 Linear Algebra'},
+  {id:113,subject:'linalg',question:'Compute the product $A\\mathbf{x}$ where $A = \\begin{bmatrix} 6 & 5 & -4 & -3 & 7 & 6 \\end{bmatrix}$ and $\\mathbf{x} = \\begin{bmatrix} 2 \\\\ -3 \\end{bmatrix}$.',image:null,options:['$$\\begin{bmatrix} -3 \\\\ 1 \\\\ -4 \\end{bmatrix}$$','$$\\begin{bmatrix} 3 \\\\ -1 \\\\ 4 \\end{bmatrix}$$','$$\\begin{bmatrix} 0 \\\\ 0 \\\\ 0 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 \\\\ 1 \\\\ 1 \\end{bmatrix}$$','Undefined'],correct:0,chapter:'chapter 1.4 Linear Algebra'},
+  {id:114,subject:'linalg',question:'Solve the matrix equation $A\\mathbf{x} = \\mathbf{b}$ where $A = \\begin{bmatrix} 1 & 2 & 4 \\\\ 0 & 1 & 5 \\\\ -2 & -4 & -3 \\end{bmatrix}$ and $\\mathbf{b} = \\begin{bmatrix} -2 \\\\ 2 \\\\ 9 \\end{bmatrix}$.',image:null,options:['$$\\begin{bmatrix} 0 \\\\ -3 \\\\ 1 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 \\\\ 2 \\\\ 3 \\end{bmatrix}$$','$$\\begin{bmatrix} -2 \\\\ 0 \\\\ 1 \\end{bmatrix}$$','No solution','$$\\begin{bmatrix} 0 \\\\ 0 \\\\ 0 \\end{bmatrix}$$'],correct:0,chapter:'chapter 1.4 Linear Algebra'},
+  {id:115,subject:'linalg',question:'If a $3 \\times 3$ matrix $A$ and a vector $\\mathbf{b} \\in \\mathbb{R}^3$ are such that the equation $A\\mathbf{x} = \\mathbf{b}$ has a unique solution, what can be said about the columns of $A$?',image:null,options:['The columns of A span $\\mathbb{R}^3$','The columns of A are linearly dependent','The columns of A do not span $\\mathbb{R}^3$','A is the zero matrix','A is a 3x4 matrix'],correct:0,chapter:'chapter 1.4 Linear Algebra'},
+  {id:116,subject:'linalg',question:'Determine if the following homogeneous system has a nontrivial solution: $2x_1 - 5x_2 + 8x_3 = 0$; $-2x_1 - 7x_2 + x_3 = 0$; $4x_1 + 2x_2 + 7x_3 = 0$.',image:null,options:['No, only the trivial solution exists','Yes, nontrivial solutions exist','The system is inconsistent','(1, 1, 1) is a solution','Cannot be determined'],correct:0,chapter:'chapter 1.5 Linear Algebra'},
+  {id:117,subject:'linalg',question:'Describe the solution set of $x_1 - 3x_2 + 5x_3 = 4$ in parametric vector form and compare it to the solution set of $x_1 - 3x_2 + 5x_3 = 0$.',image:null,options:['The nonhomogeneous solution is a translation of the homogeneous solution by $\\mathbf{p} = \\begin{bmatrix} 4 \\\\ 0 \\\\ 0 \\end{bmatrix}$','Both solution sets are the same','The solutions are not related','The nonhomogeneous system has no solution','Both represent planes through the origin'],correct:0,chapter:'chapter 1.5 Linear Algebra'},
+  {id:118,subject:'linalg',question:'Find the parametric equation of the line through $\\mathbf{a} = \\begin{bmatrix} -2 \\\\ 0 \\end{bmatrix}$ parallel to $\\mathbf{b} = \\begin{bmatrix} -5 \\\\ 3 \\end{bmatrix}$.',image:null,options:['$$\\mathbf{x} = \\begin{bmatrix} -2 \\\\ 0 \\end{bmatrix} + t\\begin{bmatrix} -5 \\\\ 3 \\end{bmatrix}$$','$$\\mathbf{x} = \\begin{bmatrix} -5 \\\\ 3 \\end{bmatrix} + t\\begin{bmatrix} -2 \\\\ 0 \\end{bmatrix}$$','$$\\mathbf{x} = \\begin{bmatrix} -7 \\\\ 3 \\end{bmatrix}t$$','$$\\mathbf{x} = \\begin{bmatrix} 0 \\\\ 0 \\end{bmatrix} + t\\begin{bmatrix} 3 \\\\ 5 \\end{bmatrix}$$','y = -1.5x + 3'],correct:0,chapter:'chapter 1.5 Linear Algebra'},
+  {id:119,subject:'linalg',question:'Determine if the vectors $\\mathbf{v_1} = \\begin{bmatrix} 5 \\\\ 0 \\\\ 0 \\end{bmatrix}$, $\\mathbf{v_2} = \\begin{bmatrix} 7 \\\\ 2 \\\\ -6 \\end{bmatrix}$, and $\\mathbf{v_3} = \\begin{bmatrix} 9 \\\\ 4 \\\\ -8 \\end{bmatrix}$ are linearly independent.',image:null,options:['Linearly independent','Linearly dependent','They span $\\mathbb{R}^2$ only','One is a multiple of another','Cannot be determined'],correct:0,chapter:'chapter 1.7 Linear Algebra'},
+  {id:120,subject:'linalg',question:'For what value of $h$ is the set $\\left\\{ \\begin{bmatrix} 1 \\\\ -1 \\\\ 4 \\end{bmatrix}, \\begin{bmatrix} 3 \\\\ -5 \\\\ 7 \\end{bmatrix}, \\begin{bmatrix} -1 \\\\ 5 \\\\ h \\end{bmatrix} \\right\\}$ linearly dependent?',image:null,options:['h = -3','h = 3','h = 0','h = 7','All real values of h'],correct:0,chapter:'chapter 1.7 Linear Algebra'},
+  {id:121,subject:'linalg',question:'Given a linear transformation $T: \\mathbb{R}^2 \\to \\mathbb{R}^2$ such that $T(\\mathbf{u}) = \\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix}$ and $T(\\mathbf{v}) = \\begin{bmatrix} -1 \\\\ 3 \\end{bmatrix}$, find $T(3\\mathbf{u} + 2\\mathbf{v})$.',image:null,options:['$$\\begin{bmatrix} 4 \\\\ 9 \\end{bmatrix}$$','$$\\begin{bmatrix} 6 \\\\ 3 \\end{bmatrix}$$','$$\\begin{bmatrix} -2 \\\\ 6 \\end{bmatrix}$$','$$\\begin{bmatrix} 8 \\\\ 12 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 \\\\ 4 \\end{bmatrix}$$'],correct:0,chapter:'chapter 1.8 Linear Algebra'},
+  {id:122,subject:'linalg',question:'Find the standard matrix of the linear transformation $T: \\mathbb{R}^2 \\to \\mathbb{R}^2$ that rotates points about the origin through $\\pi/2$ radians counterclockwise.',image:null,options:['$$\\begin{bmatrix} 0 & -1 \\\\ 1 & 0 \\end{bmatrix}$$','$$\\begin{bmatrix} 0 & 1 \\\\ -1 & 0 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}$$','$$\\begin{bmatrix} -1 & 0 \\\\ 0 & -1 \\end{bmatrix}$$','$$\\begin{bmatrix} 0 & 0 \\\\ 0 & 0 \\end{bmatrix}$$'],correct:0,chapter:'chapter 1.9 Linear Algebra'},
+  {id:123,subject:'linalg',question:'Find the standard matrix of the linear transformation $T: \\mathbb{R}^2 \\to \\mathbb{R}^2$ that reflects points through the horizontal $x_1$-axis.',image:null,options:['$$\\begin{bmatrix} 1 & 0 \\\\ 0 & -1 \\end{bmatrix}$$','$$\\begin{bmatrix} -1 & 0 \\\\ 0 & 1 \\end{bmatrix}$$','$$\\begin{bmatrix} 0 & 1 \\\\ 1 & 0 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}$$','$$\\begin{bmatrix} 0 & -1 \\\\ -1 & 0 \\end{bmatrix}$$'],correct:0,chapter:'chapter 1.9 Linear Algebra'},
+  {id:124,subject:'linalg',question:'Find the standard matrix of the linear transformation $T: \\mathbb{R}^2 \\to \\mathbb{R}^2$ that first rotates points through $3\\pi/4$ radians (clockwise) and then reflects points through the horizontal $x_1$-axis.',image:null,options:['$$\\begin{bmatrix} -\\frac{1}{\\sqrt{2}} & \\frac{1}{\\sqrt{2}} \\\\ \\frac{1}{\\sqrt{2}} & \\frac{1}{\\sqrt{2}} \\end{bmatrix}$$','$$\\begin{bmatrix} 1 & 0 \\\\ 0 & -1 \\end{bmatrix}$$','$$\\begin{bmatrix} 0 & 1 \\\\ 1 & 0 \\end{bmatrix}$$','$$\\begin{bmatrix} -1 & 0 \\\\ 0 & -1 \\end{bmatrix}$$','$$\\begin{bmatrix} \\frac{1}{\\sqrt{2}} & -\\frac{1}{\\sqrt{2}} \\\\ -\\frac{1}{\\sqrt{2}} & -\\frac{1}{\\sqrt{2}} \\end{bmatrix}$$'],correct:0,chapter:'chapter 1.9 Linear Algebra'},
+  {id:125,subject:'linalg',question:'If $A = \\begin{bmatrix} 2 & 0 & -1 \\\\ 4 & -5 & 2 \\end{bmatrix}$, compute $-2A$.',image:null,options:['$$\\begin{bmatrix} -4 & 0 & 2 \\\\ -8 & 10 & -4 \\end{bmatrix}$$','$$\\begin{bmatrix} 4 & 0 & -2 \\\\ 8 & -10 & 4 \\end{bmatrix}$$','$$\\begin{bmatrix} 0 & 0 & 0 \\\\ 0 & 0 & 0 \\end{bmatrix}$$','$$\\begin{bmatrix} -2 & 0 & 1 \\\\ -4 & 5 & -2 \\end{bmatrix}$$','Undefined'],correct:0,chapter:'chapter 2.1 Linear Algebra'},
+  {id:126,subject:'linalg',question:'Compute the matrix product $CD$ where $C = \\begin{bmatrix} 1 & 2 \\\\ -2 & 1 \\end{bmatrix}$ and $D = \\begin{bmatrix} 3 & 5 \\\\ -1 & 4 \\end{bmatrix}$.',image:null,options:['$$\\begin{bmatrix} 1 & 13 \\\\ -7 & -6 \\end{bmatrix}$$','$$\\begin{bmatrix} 3 & 10 \\\\ 2 & 4 \\end{bmatrix}$$','$$\\begin{bmatrix} 4 & 7 \\\\ -3 & 5 \\end{bmatrix}$$','$$\\begin{bmatrix} 13 & 1 \\\\ -6 & -7 \\end{bmatrix}$$','Undefined'],correct:0,chapter:'chapter 2.1 Linear Algebra'},
+  {id:127,subject:'linalg',question:'Find the inverse of the matrix $A = \\begin{bmatrix} 8 & 6 \\\\ 5 & 4 \\end{bmatrix}$.',image:null,options:['$$\\begin{bmatrix} 2 & -3 \\\\ -2.5 & 4 \\end{bmatrix}$$','$$\\begin{bmatrix} 4 & -6 \\\\ -5 & 8 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}$$','$$\\begin{bmatrix} 0.5 & -0.75 \\\\ -0.625 & 1 \\end{bmatrix}$$','Not invertible'],correct:0,chapter:'chapter 2.2 Linear Algebra'},
+  {id:128,subject:'linalg',question:'Use the inverse of $A = \\begin{bmatrix} 8 & 6 \\\\ 5 & 4 \\end{bmatrix}$ to solve the system $8x_1 + 6x_2 = 2$; $5x_1 + 4x_2 = -1$.',image:null,options:['x_1 = 7, x_2 = -9','x_1 = -9, x_2 = 7','x_1 = 1, x_2 = -1','x_1 = 0, x_2 = 0','No solution'],correct:0,chapter:'chapter 2.2 Linear Algebra'},
+  {id:129,subject:'linalg',question:'Find the inverse of the matrix $A = \\begin{bmatrix} 1 & 2 \\\\ 4 & 7 \\end{bmatrix}$.',image:null,options:['$$\\begin{bmatrix} -7 & 2 \\\\ 4 & -1 \\end{bmatrix}$$','$$\\begin{bmatrix} 7 & -2 \\\\ -4 & 1 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}$$','$$\\begin{bmatrix} -1 & 2 \\\\ 4 & -7 \\end{bmatrix}$$','Not invertible'],correct:0,chapter:'chapter 2.2 Linear Algebra'},
+  {id:130,subject:'linalg',question:'Determine if the matrix $A = \\begin{bmatrix} 5 & 0 & 0 \\\\ -3 & -7 & 0 \\\\ 8 & 5 & -1 \\end{bmatrix}$ is invertible.',image:null,options:['Invertible, because it has 3 pivots','Not invertible, because it is triangular','Invertible, but only if all entries are positive','Not invertible, determinant is zero','Cannot be determined'],correct:0,chapter:'chapter 2.3 Linear Algebra'},
+  {id:131,subject:'linalg',question:'If the columns of a $7 \\times 7$ matrix $D$ are linearly independent, what can be said about the equation $D\\mathbf{x} = \\mathbf{b}$?',image:null,options:['The equation has a unique solution for each $\\mathbf{b}$ in $\\mathbb{R}^7$','The equation has infinitely many solutions','The equation is inconsistent for some $\\mathbf{b}$','D is not invertible','D is the identity matrix'],correct:0,chapter:'chapter 2.3 Linear Algebra'},
+  {id:132,subject:'linalg',question:'If the null space of a $5 \\times 6$ matrix $A$ is 4-dimensional, what is the dimension of the column space of $A$?',image:null,options:['2','4','6','1','0'],correct:0,chapter:'chapter 2.9 Linear Algebra'},
+  {id:133,subject:'linalg',question:'Compute the determinant of $$\\begin{bmatrix} 3 & 0 & 4 \\\\ 2 & 3 & 2 \\\\ 0 & 5 & -1 \\end{bmatrix}$$.',image:null,options:['1','0','-1','15','6'],correct:0,chapter:'chapter 3.1 Linear Algebra'},
+  {id:134,subject:'linalg',question:'Compute the determinant of $$\\begin{bmatrix} 2 & -2 & 3 \\\\ 3 & 1 & 2 \\\\ 1 & 3 & -1 \\end{bmatrix}$$.',image:null,options:['0','10','-5','5','1'],correct:0,chapter:'chapter 3.1 Linear Algebra'},
+  {id:135,subject:'linalg',question:'Find the determinant of the triangular matrix $$\\begin{bmatrix} 3 & 0 & 0 & 0 \\\\ 7 & -2 & 0 & 0 \\\\ 2 & 6 & 3 & 0 \\\\ 3 & -8 & 4 & -3 \\end{bmatrix}$$.',image:null,options:['-108','54','0','108','-54'],correct:0,chapter:'chapter 3.1 Linear Algebra'},
+  {id:136,subject:'linalg',question:'What is the determinant of an elementary scaling matrix with $k$ on the diagonal?',image:null,options:['k','1','0','1/k','k^n'],correct:0,chapter:'chapter 3.1 Linear Algebra'},
+  {id:137,subject:'linalg',question:'If $\\det A = 7$ for a $3 \\times 3$ matrix $A$, what is $\\det (3A)$?',image:null,options:['189','21','7','63','0'],correct:0,chapter:'chapter 3.2 Linear Algebra'},
+  {id:138,subject:'linalg',question:'If $A$ and $B$ are $3 \\times 3$ matrices with $\\det A = -3$ and $\\det B = 4$, compute $\\det (AB)$.',image:null,options:['-12','1','-0.75','7','-7'],correct:0,chapter:'chapter 3.2 Linear Algebra'},
+  {id:139,subject:'linalg',question:'Use Cramer\'s rule to solve the system: $3x_1 - 2x_2 = 6$; $-5x_1 + 4x_2 = 8$.',image:null,options:['x_1 = 20, x_2 = 27','x_1 = 27, x_2 = 20','x_1 = 6, x_2 = 8','x_1 = 0, x_2 = 0','No solution'],correct:0,chapter:'chapter 3.3 Linear Algebra'},
+  {id:140,subject:'linalg',question:'Find the area of the parallelogram whose vertices are $(0,0), (5,2), (6,4), (11,6)$.',image:null,options:['8','10','12','6','4'],correct:0,chapter:'chapter 3.3 Linear Algebra'},
+  {id:141,subject:'linalg',question:'Find the volume of the parallelepiped with one vertex at the origin and adjacent vertices at $(1,0,-3), (1,2,4), (5,1,0)$.',image:null,options:['23','15','0','46','10'],correct:0,chapter:'chapter 3.3 Linear Algebra'},
+  {id:142,subject:'linalg',question:'Determine if the set of all vectors of the form $\\begin{bmatrix} s \\\\ 3s \\\\ 2s \\end{bmatrix}$ is a subspace of $\\mathbb{R}^3$.',image:null,options:['Yes, it is Span$\\{\\mathbf{v}\\}$ for $\\mathbf{v} = \\begin{bmatrix} 1 \\\\ 3 \\\\ 2 \\end{bmatrix}$','No, it does not contain the zero vector','No, it is not closed under addition','Yes, it is the entire $\\mathbb{R}^3$','Only if s = 0'],correct:0,chapter:'chapter 4.1 Linear Algebra'},
+  {id:143,subject:'linalg',question:'Determine if the set $H$ of all matrices of the form $\\begin{bmatrix} a & b \\\\ 0 & d \\end{bmatrix}$ is a subspace of $M_{2\\times2}$.',image:null,options:['Yes, it satisfies all subspace axioms','No, the zero matrix is not in it','No, it is not closed under scalar multiplication','Yes, but only if a, b, d are integers','No, it is a vector space but not a subspace'],correct:0,chapter:'chapter 4.1 Linear Algebra'},
+  {id:144,subject:'linalg',question:'Find a basis for the null space of the matrix $A = \\begin{bmatrix} 1 & 3 & 5 & 0 \\\\ 0 & 1 & 4 & -2 \\end{bmatrix}$.',image:null,options:['$$\\left\\{ \\begin{bmatrix} 7 \\\\ -4 \\\\ 1 \\\\ 0 \\end{bmatrix}, \\begin{bmatrix} -6 \\\\ 2 \\\\ 0 \\\\ 1 \\end{bmatrix} \\right\\}$$','$$\\left\\{ \\begin{bmatrix} 1 \\\\ 0 \\end{bmatrix}, \\begin{bmatrix} 0 \\\\ 1 \\end{bmatrix} \\right\\}$$','$$\\left\\{ \\begin{bmatrix} 1 \\\\ 3 \\\\ 5 \\\\ 0 \\end{bmatrix} \\right\\}$$','No basis exists','$$\\left\\{ \\begin{bmatrix} 0 \\\\ 0 \\\\ 0 \\\\ 0 \\end{bmatrix} \\right\\}$$'],correct:0,chapter:'chapter 4.2 Linear Algebra'},
+  {id:145,subject:'linalg',question:'What is the dimension of the subspace of all vectors in $\\mathbb{R}^3$ whose first and third entries are equal?',image:null,options:['2','1','3','0','Undefined'],correct:0,chapter:'chapter 4.5 Linear Algebra'},
+  {id:146,subject:'linalg',question:'If a $3 \\times 8$ matrix $A$ has rank 3, what is the dimension of its null space?',image:null,options:['5','3','8','0','11'],correct:0,chapter:'chapter 4.6 Linear Algebra'},
+  {id:147,subject:'linalg',question:'Find the rank of a $4 \\times 5$ matrix whose null space is 3-dimensional.',image:null,options:['2','3','4','1','5'],correct:0,chapter:'chapter 4.6 Linear Algebra'},
+  {id:148,subject:'linalg',question:'Given a basis $\\mathcal{B} = \\left\\{ \\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix}, \\begin{bmatrix} 2 \\\\ -1 \\end{bmatrix} \\right\\}$ and a coordinate vector $[\\mathbf{x}]_{\\mathcal{B}} = \\begin{bmatrix} 3 \\\\ 2 \\end{bmatrix}$, find $\\mathbf{x}$.',image:null,options:['$$\\begin{bmatrix} 7 \\\\ 1 \\end{bmatrix}$$','$$\\begin{bmatrix} 3 \\\\ 2 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 \\\\ 1 \\end{bmatrix}$$','$$\\begin{bmatrix} 5 \\\\ 0 \\end{bmatrix}$$','$$\\begin{bmatrix} 0 \\\\ 0 \\end{bmatrix}$$'],correct:0,chapter:'chapter 4.4 Linear Algebra'},
+  {id:149,subject:'linalg',question:'Determine the steady-state vector for the stochastic matrix $P = \\begin{bmatrix} 0.6 & 0.3 \\\\ 0.4 & 0.7 \\end{bmatrix}$.',image:null,options:['$$\\begin{bmatrix} \\frac{3}{7} \\\\ \\frac{4}{7} \\end{bmatrix}$$','$$\\begin{bmatrix} 0.5 \\\\ 0.5 \\end{bmatrix}$$','$$\\begin{bmatrix} 1 \\\\ 0 \\end{bmatrix}$$','$$\\begin{bmatrix} 0.6 \\\\ 0.4 \\end{bmatrix}$$','$$\\begin{bmatrix} 0.3 \\\\ 0.7 \\end{bmatrix}$$'],correct:0,chapter:'chapter 4.9 Linear Algebra'},
+  {id:150,subject:'linalg',question:'Solve the following system of linear equations: $2x_1 + 4x_2 = -4$; $5x_1 + 7x_2 = 11$.',image:null,options:['x_1 = 12, x_2 = -7','x_1 = -7, x_2 = 12','x_1 = 12, x_2 = 7','x_1 = -12, x_2 = -7','Inconsistent'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:151,subject:'linalg',question:'Find the point of intersection of the lines $x_1 - 5x_2 = 1$ and $3x_1 - 7x_2 = 5$.',image:null,options:['(9/4, 1/4)','(1/4, 9/4)','(-9/4, -1/4)','(2, 1/5)','No intersection'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:152,subject:'linalg',question:'Determine the value of $h$ such that the matrix $\\begin{bmatrix} 1 & h & -3 \\\\ -2 & 4 & 6 \\end{bmatrix}$ is the augmented matrix of a consistent linear system.',image:null,options:['All real values of h','h = -2','h \\neq -2','h = 2','No values of h'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:153,subject:'linalg',question:'Determine the value(s) of $h$ such that the matrix $\\begin{bmatrix} 1 & 3 & -2 \\\\ -4 & h & 8 \\end{bmatrix}$ corresponds to a consistent linear system.',image:null,options:['All real values of h','h = -12','h \\neq -12','h = 0','No values of h'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:154,subject:'linalg',question:'Determine the value of $h$ for which the following augmented matrix corresponds to a consistent system: $\\begin{bmatrix} 2 & -3 & h \\\\ -6 & 9 & 5 \\end{bmatrix}$.',image:null,options:['h = -5/3','h = 5/3','h = 0','All real values of h','No values of h'],correct:4,chapter:'chapter 1.1 Linear Algebra'},
+  {id:155,subject:'linalg',question:'Solve the system of equations corresponding to the augmented matrix $\\begin{bmatrix} 1 & -1 & 0 & 0 & -4 \\\\ 0 & 1 & -3 & 0 & -7 \\\\ 0 & 0 & 1 & -3 & -1 \\\\ 0 & 0 & 0 & 2 & 4 \\end{bmatrix}$.',image:null,options:['(4, 8, 5, 2)','(2, 5, 8, 4)','(-4, -7, -1, 2)','(4, 5, 8, 2)','Inconsistent'],correct:0,chapter:'chapter 1.1 Linear Algebra'},
+  {id:156,subject:'linalg',question:'Find the general solution of the system with augmented matrix $\\begin{bmatrix} 1 & 3 & 4 & 7 \\\\ 3 & 9 & 7 & 6 \\end{bmatrix}$.',image:null,options:['x_1 = -5 - 3x_2, x_2 \\text{ is free}, x_3 = 3','x_1 = 5 + 3x_2, x_2 \\text{ is free}, x_3 = 3','x_1 = -5, x_2 = 0, x_3 = 3','x_1 = -3, x_2 \\text{ is free}, x_3 = -5','Inconsistent'],correct:0,chapter:'chapter 1.2 Linear Algebra'},
+  {id:157,subject:'linalg',question:'Describe the general solution of the system whose augmented matrix is $\\begin{bmatrix} 0 & 1 & -6 & 5 \\\\ 1 & -2 & 7 & -6 \\end{bmatrix}$.',image:null,options:['x_1 = 4 + 5x_3, x_2 = 5 + 6x_3, x_3 \\text{ is free}','x_1 = 4 - 5x_3, x_2 = 5 - 6x_3, x_3 \\text{ is free}','x_1 = 5 + 4x_3, x_2 = 6 + 5x_3, x_3 \\text{ is free}','x_1 = 4, x_2 = 5, x_3 = 0','Inconsistent'],correct:0,chapter:'chapter 1.2 Linear Algebra'},
+  {id:158,subject:'linalg',question:'Given $\\mathbf{a_1} = \\begin{bmatrix} 1 \\\\ -2 \\\\ 2 \\end{bmatrix}$, $\\mathbf{a_2} = \\begin{bmatrix} 0 \\\\ 5 \\\\ 5 \\end{bmatrix}$, $\\mathbf{a_3} = \\begin{bmatrix} 2 \\\\ 0 \\\\ 8 \\end{bmatrix}$, and $\\mathbf{b} = \\begin{bmatrix} -5 \\\\ 11 \\\\ -7 \\end{bmatrix}$, is $\\mathbf{b}$ a linear combination of $\\mathbf{a_1}, \\mathbf{a_2}, \\mathbf{a_3}$?',image:null,options:['No','Yes, with unique weights','Yes, with infinitely many weights','Yes, b = a1 + a2 + a3','Yes, b = -a1 + 2a2'],correct:0,chapter:'chapter 1.3 Linear Algebra'},
+  {id:159,subject:'linalg',question:'For what value of $h$ is $\\mathbf{b} = \\begin{bmatrix} 4 \\\\ 1 \\\\ h \\end{bmatrix}$ in the plane spanned by $\\mathbf{a_1} = \\begin{bmatrix} 1 \\\\ 4 \\\\ -2 \\end{bmatrix}$ and $\\mathbf{a_2} = \\begin{bmatrix} -2 \\\\ -3 \\\\ 7 \\end{bmatrix}$?',image:null,options:['h = -17','h = 17','h = 0','h = 5','All real h'],correct:0,chapter:'chapter 1.3 Linear Algebra'},
+  {id:160,subject:'linalg',question:'Compute the product $A\\mathbf{x}$ where $A = \\begin{bmatrix} 1 & 2 & 4 \\\\ 0 & 1 & 5 \\\\ -2 & -4 & -3 \\end{bmatrix}$ and $\\mathbf{x} = \\begin{bmatrix} 0 \\\\ -3 \\\\ 1 \\end{bmatrix}$.',image:null,options:['\\begin{bmatrix} -2 \\\\ 2 \\\\ 9 \\end{bmatrix}','\\begin{bmatrix} 2 \\\\ -2 \\\\ -9 \\end{bmatrix}','\\begin{bmatrix} 0 \\\\ 0 \\\\ 0 \\end{bmatrix}','\\begin{bmatrix} -2 \\\\ 1 \\\\ 3 \\end{bmatrix}','Undefined'],correct:0,chapter:'chapter 1.4 Linear Algebra'},
+  {id:161,subject:'linalg',question:'Solve the matrix equation $A\\mathbf{x} = \\mathbf{b}$ where $A = \\begin{bmatrix} 1 & 2 & 1 \\\\ -3 & -1 & 2 \\\\ 0 & 5 & 3 \\end{bmatrix}$ and $\\mathbf{b} = \\begin{bmatrix} 0 \\\\ 1 \\\\ -1 \\end{bmatrix}$.',image:null,options:['No solution','\\begin{bmatrix} -1 \\\\ 1 \\\\ -1 \\end{bmatrix}','\\begin{bmatrix} 1 \\\\ 0 \\\\ -1 \\end{bmatrix}','\\begin{bmatrix} 0 \\\\ 0 \\\\ 0 \\end{bmatrix}','\\begin{bmatrix} 1 \\\\ 1 \\\\ 1 \\end{bmatrix}'],correct:0,chapter:'chapter 1.4 Linear Algebra'},
+  {id:162,subject:'linalg',question:'Determine if the equation $Ax = \\mathbf{b}$ has a solution for every $\\mathbf{b} \\in \\mathbb{R}^4$, where $A = \\begin{bmatrix} 1 & 3 & 0 & 3 \\\\ -1 & -1 & -1 & 1 \\\\ 0 & -4 & 2 & -8 \\\\ 2 & 0 & 3 & -1 \\end{bmatrix}$.',image:null,options:['No, because there are only 3 pivots','Yes, because there are 4 pivots','Yes, because A is 4x4','No, because the columns are dependent','Cannot be determined'],correct:0,chapter:'chapter 1.4 Linear Algebra'},
+  {id:163,subject:'linalg',question:'Find all solutions of $Ax = 0$ in parametric vector form, where $A$ is row equivalent to $\\begin{bmatrix} 1 & 3 & -3 & 7 \\\\ 0 & 1 & -4 & 5 \\end{bmatrix}$.',image:null,options:['x = x_3 \\begin{bmatrix} -9 \\\\ 4 \\\\ 1 \\\\ 0 \\end{bmatrix} + x_4 \\begin{bmatrix} 8 \\\\ -5 \\\\ 0 \\\\ 1 \\end{bmatrix}','x = x_3 \\begin{bmatrix} 9 \\\\ -4 \\\\ 1 \\\\ 0 \\end{bmatrix} + x_4 \\begin{bmatrix} -8 \\\\ 5 \\\\ 0 \\\\ 1 \\end{bmatrix}','x = x_1 \\begin{bmatrix} 1 \\\\ 0 \\\\ 0 \\\\ 0 \\end{bmatrix} + x_2 \\begin{bmatrix} 0 \\\\ 1 \\\\ 0 \\\\ 0 \\end{bmatrix}','x = \\begin{bmatrix} -9 \\\\ 4 \\\\ 1 \\\\ 0 \\end{bmatrix}','Only the trivial solution'],correct:0,chapter:'chapter 1.5 Linear Algebra'},
+  {id:164,subject:'linalg',question:'Find the parametric equation of the line through $\\mathbf{p} = \\begin{bmatrix} 2 \\\\ -5 \\end{bmatrix}$ and $\\mathbf{q} = \\begin{bmatrix} -3 \\\\ 1 \\end{bmatrix}$.',image:null,options:['x = \\begin{bmatrix} 2 \\\\ -5 \\end{bmatrix} + t \\begin{bmatrix} -5 \\\\ 6 \\end{bmatrix}','x = \\begin{bmatrix} -3 \\\\ 1 \\end{bmatrix} + t \\begin{bmatrix} 2 \\\\ -5 \\end{bmatrix}','x = t \\begin{bmatrix} -5 \\\\ 6 \\end{bmatrix}','x = \\begin{bmatrix} -1 \\\\ -4 \\end{bmatrix} + t \\begin{bmatrix} 2 \\\\ -5 \\end{bmatrix}','y = -1.2x - 2.6'],correct:0,chapter:'chapter 1.5 Linear Algebra'},
+  {id:165,subject:'linalg',question:'Determine if the vectors $\\mathbf{v_1} = \\begin{bmatrix} 0 \\\\ 0 \\\\ 2 \\end{bmatrix}$, $\\mathbf{v_2} = \\begin{bmatrix} 0 \\\\ 5 \\\\ -8 \\end{bmatrix}$, and $\\mathbf{v_3} = \\begin{bmatrix} -3 \\\\ 4 \\\\ 1 \\end{bmatrix}$ are linearly independent.',image:null,options:['Linearly independent','Linearly dependent','They span \\mathbb{R}^2 only','v1 is a multiple of v2','Cannot be determined'],correct:0,chapter:'chapter 1.7 Linear Algebra'},
+  {id:166,subject:'linalg',question:'For what value(s) of $h$ is the set $\\left\\{ \\begin{bmatrix} 1 \\\\ -1 \\\\ 4 \\end{bmatrix}, \\begin{bmatrix} 3 \\\\ -5 \\\\ 7 \\end{bmatrix}, \\begin{bmatrix} -1 \\\\ 5 \\\\ h \\end{bmatrix} \\right\\}$ linearly dependent?',image:null,options:['h = 6','h = -6','h = 0','No values of h','All real values of h'],correct:0,chapter:'chapter 1.7 Linear Algebra'},
+  {id:167,subject:'linalg',question:'Find all $x \\in \\mathbb{R}^4$ that are mapped into the zero vector by the transformation $x \\mapsto Ax$, where $A = \\begin{bmatrix} 1 & -4 & 7 & -5 \\\\ 0 & 1 & -4 & 3 \\\\ 2 & -6 & 6 & -4 \\end{bmatrix}$.',image:null,options:['x = x_3 \\begin{bmatrix} 9 \\\\ 4 \\\\ 1 \\\\ 0 \\end{bmatrix} + x_4 \\begin{bmatrix} -7 \\\\ -3 \\\\ 0 \\\\ 1 \\end{bmatrix}','x = x_3 \\begin{bmatrix} -9 \\\\ -4 \\\\ 1 \\\\ 0 \\end{bmatrix} + x_4 \\begin{bmatrix} 7 \\\\ 3 \\\\ 0 \\\\ 1 \\end{bmatrix}','Only x = 0','x = \\begin{bmatrix} 9 \\\\ 4 \\\\ 1 \\\\ 0 \\end{bmatrix}','Inconsistent'],correct:0,chapter:'chapter 1.8 Linear Algebra'},
+  {id:168,subject:'linalg',question:'Given a linear transformation $T: \\mathbb{R}^2 \\to \\mathbb{R}^2$ such that $T(\\mathbf{e_1}) = \\begin{bmatrix} 0 \\\\ -1 \\end{bmatrix}$ and $T(\\mathbf{e_2}) = \\begin{bmatrix} 1 \\\\ 0 \\end{bmatrix}$, what geometric operation does $T$ perform?',image:null,options:['Rotation counterclockwise by \\pi/2','Rotation clockwise by \\pi/2','Reflection through the x-axis','Reflection through the y-axis','Projection onto the x-axis'],correct:1,chapter:'chapter 1.9 Linear Algebra'},
+  {id:169,subject:'linalg',question:'Find the standard matrix of the linear transformation $T: \\mathbb{R}^2 \\to \\mathbb{R}^2$ that first rotates points clockwise through $\\pi/4$ radians and then reflects points through the horizontal $x_1$-axis.',image:null,options:['\\begin{bmatrix} 1/\\sqrt{2} & 1/\\sqrt{2} \\\\ 1/\\sqrt{2} & -1/\\sqrt{2} \\end{bmatrix}','\\begin{bmatrix} 1/\\sqrt{2} & -1/\\sqrt{2} \\\\ -1/\\sqrt{2} & -1/\\sqrt{2} \\end{bmatrix}','\\begin{bmatrix} 1 & 0 \\\\ 0 & -1 \\end{bmatrix}','\\begin{bmatrix} 0 & 1 \\\\ 1 & 0 \\end{bmatrix}','\\begin{bmatrix} -1 & 0 \\\\ 0 & -1 \\end{bmatrix}'],correct:0,chapter:'chapter 1.9 Linear Algebra'},
+  {id:170,subject:'linalg',question:'If $A = \\begin{bmatrix} 2 & 0 & -1 \\\\ 4 & -5 & 2 \\end{bmatrix}$ and $B = \\begin{bmatrix} 7 & -5 & 1 \\\\ 1 & -4 & -3 \\end{bmatrix}$, compute $B - 2A$.',image:null,options:['\\begin{bmatrix} 3 & -5 & 3 \\\\ -7 & 6 & -7 \\end{bmatrix}','\\begin{bmatrix} 5 & -5 & 2 \\\\ -3 & 1 & -5 \\end{bmatrix}','\\begin{bmatrix} 11 & -5 & -1 \\\\ 9 & -14 & 1 \\end{bmatrix}','\\begin{bmatrix} -3 & 5 & -3 \\\\ 7 & -6 & 7 \\end{bmatrix}','Undefined'],correct:0,chapter:'chapter 2.1 Linear Algebra'},
+  {id:171,subject:'linalg',question:'Find the inverse of the matrix $A = \\begin{bmatrix} 8 & 6 \\\\ 5 & 4 \\end{bmatrix}$.',image:null,options:['\\begin{bmatrix} 2 & -3 \\\\ -2.5 & 4 \\end{bmatrix}','\\begin{bmatrix} 4 & -6 \\\\ -5 & 8 \\end{bmatrix}','\\begin{bmatrix} -2 & 3 \\\\ 2.5 & -4 \\end{bmatrix}','\\begin{bmatrix} 1 & 1 \\\\ 1 & 1 \\end{bmatrix}','Not invertible'],correct:0,chapter:'chapter 2.2 Linear Algebra'},
+  {id:172,subject:'linalg',question:'Use the inverse of $A = \\begin{bmatrix} 8 & 5 \\\\ -7 & -5 \\end{bmatrix}$ to solve $8x_1 + 5x_2 = -9$ and $-7x_1 - 5x_2 = 11$.',image:null,options:['x_1 = 2, x_2 = -5','x_1 = -5, x_2 = 2','x_1 = 1, x_2 = -1','x_1 = 0, x_2 = 0','No solution'],correct:0,chapter:'chapter 2.2 Linear Algebra'},
+  {id:173,subject:'linalg',question:'Find the inverse of the matrix $A = \\begin{bmatrix} 1 & 2 \\\\ 4 & 7 \\end{bmatrix}$.',image:null,options:['\\begin{bmatrix} -7 & 2 \\\\ 4 & -1 \\end{bmatrix}','\\begin{bmatrix} 7 & -2 \\\\ -4 & 1 \\end{bmatrix}','\\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}','\\begin{bmatrix} -1 & 2 \\\\ 4 & -7 \\end{bmatrix}','Not invertible'],correct:0,chapter:'chapter 2.2 Linear Algebra'},
+  {id:174,subject:'linalg',question:'Determine if the matrix $A = \\begin{bmatrix} 5 & 0 & 0 \\\\ -3 & -7 & 0 \\\\ 8 & 5 & -1 \\end{bmatrix}$ is invertible.',image:null,options:['Invertible, because it has 3 pivot positions','Not invertible, because it is lower triangular','Invertible, but only if its determinant is 1','Not invertible, because the row sums are not equal','Cannot be determined'],correct:0,chapter:'chapter 2.3 Linear Algebra'},
+  {id:175,subject:'linalg',question:'If the null space of a $5 \\times 6$ matrix $A$ is 4-dimensional, what is the dimension of the row space of $A$?',image:null,options:['2','4','6','1','0'],correct:0,chapter:'chapter 2.9 Linear Algebra'},
+  {id:176,subject:'linalg',question:'Compute the determinant of the matrix $\\begin{bmatrix} 3 & 0 & 4 \\\\ 2 & 3 & 2 \\\\ 0 & 5 & -1 \\end{bmatrix}$.',image:null,options:['1','0','-1','15','6'],correct:0,chapter:'chapter 3.1 Linear Algebra'},
+  {id:177,subject:'linalg',question:'Compute the determinant of $\\begin{bmatrix} 4 & 0 & 0 & 5 \\\\ 1 & 7 & 2 & -5 \\\\ 3 & 0 & 0 & 0 \\\\ 8 & 3 & 1 & 7 \\end{bmatrix}$.',image:null,options:['15','-15','0','35','105'],correct:0,chapter:'chapter 3.1 Linear Algebra'},
+  {id:178,subject:'linalg',question:'Compute the determinant of $\\begin{bmatrix} 1 & 5 & -4 \\\\ -1 & -4 & 5 \\\\ -2 & -8 & 7 \\end{bmatrix}$ by row reduction to echelon form.',image:null,options:['-1','1','0','5','-3'],correct:0,chapter:'chapter 3.2 Linear Algebra'},
+  {id:179,subject:'linalg',question:'If $\\det A = 7$ for a $3 \\times 3$ matrix $A$, compute $\\det(3A)$.',image:null,options:['189','21','7','63','0'],correct:0,chapter:'chapter 3.2 Linear Algebra'},
+  {id:180,subject:'linalg',question:'Is $\\lambda = 2$ an eigenvalue of the matrix $A = \\begin{bmatrix} 3 & 2 \\\\ 3 & 8 \\end{bmatrix}$?',image:null,options:['No, because $A - 2I$ is invertible','Yes, because $\\det(A - 2I) = 0$','Yes, with eigenvector','No, because the characteristic polynomial is $\\lambda^2 - 11\\lambda + 18$','Yes, because 2 is on the diagonal'],correct:0,chapter:'chapter 5.1 Linear Algebra'},
+  {id:181,subject:'linalg',question:'Is the vector $\\mathbf{x} = \\begin{bmatrix} 1 \\\\ 4 \\end{bmatrix}$ an eigenvector of the matrix $A = \\begin{bmatrix} -3 & 1 \\\\ -3 & 8 \\end{bmatrix}$?',image:null,options:['No, because $A\\mathbf{x}$ is not a multiple of $\\mathbf{x}$','Yes, with eigenvalue $\\lambda = 1$','Yes, with eigenvalue $\\lambda = 5$','No, because the matrix is not diagonalizable','Yes, because $\\mathbf{x}$ is not the zero vector'],correct:0,chapter:'chapter 5.1 Linear Algebra'},
+  {id:182,subject:'linalg',question:'Is $\\lambda = 4$ an eigenvalue of the matrix $A = \\begin{bmatrix} 3 & 0 & -1 \\\\ 2 & 3 & 1 \\\\ -3 & 4 & 5 \\end{bmatrix}$?',image:null,options:['Yes, because $A - 4I$ is singular (not invertible)','No, because $\\det(A - 4I) \\neq 0$','Yes, with eigenvector','No, because the matrix is triangular','Yes, because 4 is the average of the diagonal entries'],correct:0,chapter:'chapter 5.1 Linear Algebra'},
+  {id:183,subject:'linalg',question:'Find a basis for the eigenspace of $A = \\begin{bmatrix} 5 & 0 \\\\ 2 & 1 \\end{bmatrix}$ corresponding to the eigenvalue $\\lambda = 1$.',image:null,options:['\\{egin{bmatrix} 0 \\\\ 1 \\end{bmatrix}\\}','\\{egin{bmatrix} 1 \\\\ 0 \\end{bmatrix}\\}','\\{egin{bmatrix} 2 \\\\ 1 \\end{bmatrix}\\}','\\{egin{bmatrix} 5 \\\\ 2 \\end{bmatrix}\\}','No basis exists'],correct:0,chapter:'chapter 5.1 Linear Algebra'},
+  {id:184,subject:'linalg',question:'Find a basis for the eigenspace of $A = \\begin{bmatrix} 5 & 0 \\\\ 2 & 1 \\end{bmatrix}$ corresponding to the eigenvalue $\\lambda = 5$.',image:null,options:['\\{egin{bmatrix} 2 \\\\ 1 \\end{bmatrix}\\}','\\{egin{bmatrix} 0 \\\\ 1 \\end{bmatrix}\\}','\\{egin{bmatrix} 1 \\\\ 2 \\end{bmatrix}\\}','\\{egin{bmatrix} 5 \\\\ 0 \\end{bmatrix}\\}','\\{egin{bmatrix} 1 \\\\ 1 \\end{bmatrix}\\}'],correct:0,chapter:'chapter 5.1 Linear Algebra'},
+  {id:185,subject:'linalg',question:'Determine the eigenvalues of the following triangular matrix: $A = \\begin{bmatrix} 0 & 0 & 0 \\\\ 0 & 2 & 5 \\\\ 0 & 0 & -1 \\end{bmatrix}$.',image:null,options:['0, 2, -1','0, 0, 0','2, 5, -1','The matrix has no eigenvalues','1, 2, 5'],correct:0,chapter:'chapter 5.1 Linear Algebra'},
+  {id:186,subject:'linalg',question:'What is the characteristic polynomial of the matrix $A = \\begin{bmatrix} 2 & 7 \\\\ 7 & 2 \\end{bmatrix}$?',image:null,options:['$\\lambda^2 - 4\\lambda - 45$','$\\lambda^2 + 4\\lambda - 45$','$\\lambda^2 - 4\\lambda + 45$','$\\lambda^2 - 49$','$\\lambda^2 - 4$'],correct:0,chapter:'chapter 5.2 Linear Algebra'},
+  {id:187,subject:'linalg',question:'Find the eigenvalues of the matrix $A = \\begin{bmatrix} 2 & 7 \\\\ 7 & 2 \\end{bmatrix}$.',image:null,options:['9 and -5','2 and 7','9 and 5','-9 and 5','0 and 4'],correct:0,chapter:'chapter 5.2 Linear Algebra'},
+  {id:188,subject:'linalg',question:'Find the eigenvalues of the matrix $A = \\begin{bmatrix} 2 & 1 \\\\ -1 & 4 \\end{bmatrix}$.',image:null,options:['3 (with multiplicity 2)','2 and 4','1 and -1','3 and 5','No real eigenvalues'],correct:0,chapter:'chapter 5.2 Linear Algebra'},
+  {id:189,subject:'linalg',question:'List the eigenvalues of the matrix $A = \\begin{bmatrix} 4 & -7 & 0 & 2 \\\\ 0 & 3 & -4 & 6 \\\\ 0 & 0 & 3 & -8 \\\\ 0 & 0 & 0 & 1 \\end{bmatrix}$, repeated according to their multiplicities.',image:null,options:['4, 3, 3, 1','4, 3, 1','4, -7, -4, 1','0, 0, 0, 0','1, 2, 3, 4'],correct:0,chapter:'chapter 5.2 Linear Algebra'},
+  {id:190,subject:'linalg',question:'If $A$ is an $n \\times n$ matrix and $\\det(A - \\lambda I) = (\\lambda - 1)(\\lambda - 3)^2(\\lambda - 4)^3$, what is the multiplicity of the eigenvalue $\\lambda = 3$?',image:null,options:['2','1','3','6','0'],correct:0,chapter:'chapter 5.2 Linear Algebra'},
+  {id:191,subject:'linalg',question:'Given that $A$ is similar to $B$, which of the following must be true?',image:null,options:['They have the same characteristic polynomial','They have the same eigenvectors','They are both diagonal','One is the transpose of the other','Their columns are the same'],correct:0,chapter:'chapter 5.2 Linear Algebra'},
+  {id:192,subject:'linalg',question:'Find the eigenvalues of the matrix $A = \\begin{bmatrix} 7 & -2 \\\\ 2 & 3 \\end{bmatrix}$ (Note: these may be complex).',image:null,options:['5 (with multiplicity 2)','7 and 3','5 + 2i and 5 - 2i','0 and 10','No eigenvalues exist'],correct:0,chapter:'chapter 5.2 Linear Algebra'},
+  {id:193,subject:'linalg',question:'Compute $A^k$ for $A = \\begin{bmatrix} 7 & 2 \\\\ -4 & 1 \\end{bmatrix}$, given its diagonalization $A = PDP^{-1}$ where $D = \\begin{bmatrix} 5 & 0 \\\\ 0 & 3 \\end{bmatrix}$ and $P = \\begin{bmatrix} 1 & 1 \\\\ -1 & -2 \\end{bmatrix}$.',image:null,options:['$A^k = P \\begin{bmatrix} 5^k & 0 \\\\ 0 & 3^k \\end{bmatrix} P^{-1}$','$A^k = \\begin{bmatrix} 7^k & 2^k \\\\ -4^k & 1^k \\end{bmatrix}$','$A^k = P^k D P^{-k}$','$A^k = D^k$','$A^k = P D^k$'],correct:0,chapter:'chapter 5.3 Linear Algebra'},
+  {id:194,subject:'linalg',question:'A $3 \\times 3$ matrix $A$ has eigenvalues $\\lambda = 1$ and $\\lambda = -2$. The eigenspace for $\\lambda = -2$ is 2-dimensional. Is $A$ diagonalizable?',image:null,options:['Yes, because the sum of the dimensions of the eigenspaces is 3','No, because it doesn\'t have 3 distinct eigenvalues','No, because the eigenvalues are not all positive','Cannot be determined','Only if A is symmetric'],correct:0,chapter:'chapter 5.3 Linear Algebra'},
+  {id:195,subject:'linalg',question:'Diagonalize the matrix $A = \\begin{bmatrix} 1 & 0 \\\\ 3 & -1 \\end{bmatrix}$ by finding a diagonal matrix $D$.',image:null,options:['$D = \\begin{bmatrix} 1 & 0 \\\\ 0 & -1 \\end{bmatrix}$','$D = \\begin{bmatrix} 1 & 3 \\\\ 0 & -1 \\end{bmatrix}$','$D = \\begin{bmatrix} 3 & 0 \\\\ 0 & 1 \\end{bmatrix}$','$D = \\begin{bmatrix} 1 & 0 \\\\ 0 & 1 \\end{bmatrix}$','The matrix is not diagonalizable'],correct:0,chapter:'chapter 5.3 Linear Algebra'},
+  {id:196,subject:'linalg',question:'Suppose a $7 \\times 7$ matrix $A$ has 7 distinct eigenvalues. Which of the following is true?',image:null,options:['A is diagonalizable','A is the identity matrix','A is not invertible','A has a 7-dimensional eigenspace','A is a triangular matrix'],correct:0,chapter:'chapter 5.3 Linear Algebra'},
+  {id:197,subject:'linalg',question:'If $\\lambda$ is an eigenvalue of an invertible matrix $A$, what is an eigenvalue of $A^{-1}$?',image:null,options:['$1/\\lambda$','$-\\lambda$','$\\lambda$','0','1'],correct:0,chapter:'chapter 5.1 Linear Algebra'},
+  {id:198,subject:'linalg',question:'If $A^2$ is the zero matrix, what is the only possible eigenvalue of $A$?',image:null,options:['0','1','-1','Any real number','No eigenvalues possible'],correct:0,chapter:'chapter 5.1 Linear Algebra'},
+  {id:199,subject:'linalg',question:'In a discrete dynamical system $\\mathbf{x}_{k+1} = A\\mathbf{x}_k$, if $\\mathbf{x}_0$ is an eigenvector of $A$ with eigenvalue $\\lambda$, what is the formula for $\\mathbf{x}_k$?',image:null,options:['$\\mathbf{x}_k = \\lambda^k \\mathbf{x}_0$','$\\mathbf{x}_k = A^k \\lambda$','$\\mathbf{x}_k = k \\lambda \\mathbf{x}_0$','$\\mathbf{x}_k = \\mathbf{x}_0$','$\\mathbf{x}_k = \\lambda \\mathbf{x}_0^k$'],correct:0,chapter:'chapter 5.1 Linear Algebra'}
+];
+
+
+let STATE = {
+  page: 'auth',
+  user: ss('gos_user'),
+  users: [],
+  questions: INIT_QUESTIONS,
+  attempts: [],
+  activeTest: ss('gos_active_test'),
+  currentQ: 0,
+  testPage: 'questions',
+  editingQuestion: null,
+  importLog: [],
+  adminPage: 'dashboard',
+  selectedAttempt: null,
+  searchQ: '',
+  filterSubject: 'all',
+};
+
+async function saveUsers(users){
+  if(!users?.length) return;
+  const {error} = await supabaseClient.from('users').insert(users, {onConflict: 'username'});
+  if(error) console.error('Supabase save users error', error);
+}
+
+async function createUser(user){
+  if(!user) return null;
+  const {data,error} = await supabaseClient.from('users').insert([{
+    username:user.username,
+    name:user.name,
+    password:user.password,
+    role:user.role || 'student'
+  }]).select().single();
+  if(error){
+    console.error('Supabase create user error', error);
+    toast('Registration failed: ' + (error.message || 'server error'),'error');
+    return null;
+  }
+  return data;
+}
+
+/** Client uses `chapter`; Supabase column is `explanation`. */
+function fromDbQuestion(row){
+  if(!row) return null;
+  const q={...row};
+  const ch=((q.chapter!=null&&q.chapter!=='')?q.chapter:(q.explanation!=null?q.explanation:'')).toString().trim();
+  q.chapter=ch;
+  delete q.explanation;
+  return q;
+}
+function toDbQuestion(q){
+  if(!q) return null;
+  const explanation=((q.chapter!=null&&q.chapter!=='')?q.chapter:(q.explanation!=null?q.explanation:'')).toString().trim();
+  return{
+    id:q.id,
+    subject:q.subject,
+    question:q.question,
+    image:q.image??null,
+    options:q.options,
+    correct:q.correct,
+    explanation:explanation||null
+  };
+}
+function normalizeAttemptResult(r){
+  if(!r||typeof r!=='object')return r;
+  const ch=((r.chapter!=null&&r.chapter!=='')?r.chapter:(r.explanation!=null?r.explanation:'')).toString().trim();
+  const out={...r,chapter:ch};
+  delete out.explanation;
+  return out;
+}
+
+async function saveQuestions(){
+  if(!STATE.questions?.length) return;
+  const payload=STATE.questions.map(toDbQuestion);
+  const {error} = await supabaseClient.from('questions').upsert(payload, {onConflict: 'id'});
+  if(error) console.error('Supabase save questions error', error);
+}
+
+function toDbAttempt(attempt){
+  if(!attempt) return null;
+  const normalizedDate =
+    typeof attempt.date === 'number'
+      ? new Date(attempt.date).toISOString()
+      : (attempt.date || new Date().toISOString());
+  return {
+    id: attempt.id,
+    user_id: attempt.userId,
+    date: normalizedDate,
+    score: attempt.score,
+    correct: attempt.correct,
+    total: attempt.total,
+    subject_scores: attempt.subjectScores,
+    results: attempt.results,
+  };
+}
+
+function fromDbAttempt(row){
+  if(!row) return null;
+  let results=row.results;
+  if(Array.isArray(results))results=results.map(normalizeAttemptResult);
+  return {
+    id: row.id,
+    userId: row.user_id || row.userId,
+    date: row.date,
+    score: row.score,
+    correct: row.correct,
+    total: row.total,
+    subjectScores: row.subject_scores ?? row.subjectScores,
+    results,
+  };
+}
+
+async function saveAttempt(attempt){
+  if(!attempt) return;
+  console.log('Attempt to save:', attempt);
+  const attemptData = toDbAttempt(attempt);
+  const {data, error} = await supabaseClient.from('attempts').insert(attemptData).select().single();
+  if(error){
+    console.error('Supabase save attempt error', error);
+    toast('Failed to save attempt: ' + (error.message || 'server error'), 'error');
+  } else {
+    console.log('Saved attempt:', data);
+    toast('Attempt saved successfully', 'success');
+    attempt.id = data.id;
+  }
+}
+
+async function loadState(){
+  let usersRes = {data:null, error:null}, questionsRes = {data:null, error:null}, attemptsRes = {data:null, error:null};
+  try{
+    if(supabaseClient){
+      [usersRes, questionsRes, attemptsRes] = await Promise.all([
+        supabaseClient.from('users').select('*'),
+        supabaseClient.from('questions').select('*'),
+        supabaseClient.from('attempts').select('*'),
+      ]);
+    }
+  }catch(e){
+    console.error('Supabase load failed, using local fallback:', e);
+  }
+
+  if(usersRes.error) console.error('Supabase load users error', usersRes.error);
+  if(questionsRes.error) console.error('Supabase load questions error', questionsRes.error);
+  if(attemptsRes.error) console.error('Supabase load attempts error', attemptsRes.error);
+
+  STATE.users = usersRes.data?.length ? usersRes.data : [...INIT_USERS];
+  STATE.questions = questionsRes.data?.length ? questionsRes.data.map(fromDbQuestion) : [...INIT_QUESTIONS];
+  STATE.attempts = attemptsRes.data?.length ? attemptsRes.data.map(fromDbAttempt) : [];
+
+  if(STATE.user){
+    const storedUser = STATE.users.find(u=>u.id===STATE.user.id) || STATE.users.find(u=>u.username===STATE.user.username);
+    if(storedUser){
+      STATE.user = storedUser;
+    } else {
+      STATE.user = null;
+      ssSet('gos_user',null);
+    }
+  }
+
+  if(!usersRes.data?.length){
+    await saveUsers(INIT_USERS);
+  }
+  if(!questionsRes.data?.length){
+    await saveQuestions();
+  }
+}
+
+async function initApp(){
+  await loadState();
+  if(STATE.user && STATE.activeTest){
+    STATE.page = 'test';
+  } else if(STATE.user){
+    STATE.page = STATE.user.role === 'admin' ? 'admin' : 'dashboard';
+  }
+  render();
+}
+
+function render(){
+  const app=document.getElementById('app');
+  if(!STATE.user){app.innerHTML=renderAuth();attachAuth();return;}
+  if(STATE.activeTest && STATE.page==='test'){app.innerHTML=renderTest();attachTest();return;}
+  app.innerHTML=`
+    <div class="app-shell">
+      <div class="sidebar" id="sidebar">${renderSidebar()}</div>
+      <div class="main-content" id="main-content">
+        <div class="page">${renderPage()}</div>
+      </div>
+    </div>
+  `;
+  attachMain();
+  renderLatex();
+}
+
+// ========== AUTH ==========
+function renderAuth(){
+  return `
+  <div class="auth-screen">
+    <div class="auth-bg"></div><div class="auth-grid"></div>
+    <div class="auth-card">
+      <div class="logo-text" style="margin-bottom:4px;font-size:22px">📐 GOS Prep</div>
+      <div class="auth-sub">State Exam Preparation Platform</div>
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
+        <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register</div>
+      </div>
+      <div id="auth-form">${renderLoginForm()}</div>
+    </div>
+  </div>`;
+}
+function renderLoginForm(){
+  return `
+  <div class="field"><label>Username</label><input id="au" placeholder="username"/></div>
+  <div class="field"><label>Password</label><input id="ap" type="password" placeholder="password"/></div>
+  <div id="auth-err" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
+  <button class="btn btn-primary btn-full btn-lg" onclick="doLogin()">Sign In →</button>
+  <div class="text-hint text-sm mt-3" style="text-align:center">Demo: admin/admin123 · student/student123</div>`;
+}
+function renderRegisterForm(){
+  return `
+  <div class="field"><label>Full Name</label><input id="rn" placeholder="Your name"/></div>
+  <div class="field"><label>Username</label><input id="ru" placeholder="username"/></div>
+  <div class="field"><label>Password</label><input id="rp" type="password" placeholder="min 6 chars"/></div>
+  <div id="auth-err" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
+  <button class="btn btn-primary btn-full btn-lg" onclick="doRegister()">Create Account →</button>`;
+}
+let authMode='login';
+function switchAuthTab(m){
+  authMode=m;
+  document.getElementById('tab-login').classList.toggle('active',m==='login');
+  document.getElementById('tab-register').classList.toggle('active',m==='register');
+  document.getElementById('auth-form').innerHTML=m==='login'?renderLoginForm():renderRegisterForm();
+}
+function doLogin(){
+  const u=document.getElementById('au').value.trim(),p=document.getElementById('ap').value;
+  const user=STATE.users.find(x=>x.username===u&&x.password===p);
+  if(!user){document.getElementById('auth-err').style.display='block';document.getElementById('auth-err').textContent='Invalid credentials';return;}
+  STATE.user=user;STATE.page=user.role==='admin'?'admin':'dashboard';
+  ssSet('gos_user',STATE.user);
+  render();
+}
+async function doRegister(){
+  const n=document.getElementById('rn').value.trim(),u=document.getElementById('ru').value.trim(),p=document.getElementById('rp').value;
+  const err=document.getElementById('auth-err');
+  if(!n||!u||!p){err.style.display='block';err.textContent='All fields required';return;}
+  if(p.length<6){err.style.display='block';err.textContent='Password too short';return;}
+  if(STATE.users.find(x=>x.username===u)){err.style.display='block';err.textContent='Username taken';return;}
+  const newUser = await createUser({username:u,password:p,role:'student',name:n});
+  if(!newUser) return;
+  STATE.users.push(newUser);
+  ssSet('gos_user',newUser);
+  STATE.user=newUser;STATE.page='dashboard';
+  render();
+}
+function attachAuth(){
+  document.addEventListener('keydown',function h(e){if(e.key==='Enter'&&STATE.page==='auth'){authMode==='login'?doLogin():doRegister();document.removeEventListener('keydown',h)}});
+}
+
+// ========== SIDEBAR ==========
+function renderSidebar(){
+  const u=STATE.user;
+  const navItems = u.role==='admin' ? [
+    {icon:'⊞',label:'Dashboard',page:'admin',sub:'admin'},
+    {icon:'📚',label:'Questions',page:'questions',sub:'admin'},
+    {icon:'📥',label:'Import',page:'import',sub:'admin'},
+    {icon:'👥',label:'Students',page:'students',sub:'admin'},
+    {icon:'📊',label:'Analytics',page:'analytics',sub:'admin'},
+  ] : [
+    {icon:'⊞',label:'Dashboard',page:'dashboard',sub:'student'},
+    {icon:'🎯',label:'Take Test',page:'start-test',sub:'student'},
+    {icon:'📈',label:'Progress',page:'progress',sub:'student'},
+    {icon:'📋',label:'History',page:'history',sub:'student'},
+  ];
+  return `
+  <div class="logo">
+    <div class="logo-text">📐 GOS Prep</div>
+    <div class="logo-sub">v2.0 · ${u.role}</div>
+  </div>
+  <div class="nav-section">Main</div>
+  ${navItems.map(n=>`<div class="nav-item${STATE.page===n.page?' active':''}" onclick="navigate('${n.page}')"><span class="nav-icon">${n.icon}</span>${n.label}</div>`).join('')}
+  <div class="user-block">
+    <div class="user-info">
+      <div class="user-avatar">${u.name[0].toUpperCase()}</div>
+      <div>
+        <div class="user-name">${u.name}</div>
+        <div class="user-role">${u.role}</div>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm btn-full mt-3" onclick="logout()">Sign Out</button>
+  </div>`;
+}
+function logout(){STATE.user=null;STATE.page='auth';STATE.activeTest=null;ssSet('gos_user',null);ssSet('gos_active_test',null);render();}
+function navigate(p){STATE.page=p;render();}
+
+// ========== PAGES ==========
+function renderPage(){
+  const p=STATE.page;
+  if(p==='dashboard')return renderStudentDashboard();
+  if(p==='start-test')return renderStartTest();
+  if(p==='progress')return renderProgress();
+  if(p==='history')return renderHistory();
+  if(p==='admin')return renderAdminDash();
+  if(p==='questions')return renderQuestionsPage();
+  if(p==='import')return renderImport();
+  if(p==='students')return renderStudents();
+  if(p==='analytics')return renderAnalytics();
+  if(p==='result')return renderResult();
+  if(p==='edit-question')return renderEditQuestion();
+  return '<div class="text-muted">Page not found</div>';
+}
+
+// ========== STUDENT DASHBOARD ==========
+function renderStudentDashboard(){
+  const uid=STATE.user.id;
+  const myAttempts=STATE.attempts.filter(a=>a.userId===uid);
+  const avgScore=myAttempts.length?Math.round(myAttempts.reduce((s,a)=>s+a.score,0)/myAttempts.length):0;
+  const best=myAttempts.length?Math.max(...myAttempts.map(a=>a.score)):0;
+  const last=myAttempts[myAttempts.length-1];
+  return `
+  <div class="flex items-center justify-between mb-6">
+    <div><h1 style="font-size:22px;font-weight:700">Welcome back, ${STATE.user.name.split(' ')[0]} 👋</h1>
+    <div class="text-muted text-sm mt-1">Ready to practice for your GOS exam?</div></div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Attempts</div><div class="stat-value">${myAttempts.length}</div><div class="stat-sub">Total tests taken</div></div>
+    <div class="stat-card"><div class="stat-label">Average</div><div class="stat-value">${avgScore}%</div><div class="stat-sub">Score average</div></div>
+    <div class="stat-card"><div class="stat-label">Best</div><div class="stat-value">${best}%</div><div class="stat-sub">Highest score</div></div>
+    <div class="stat-card"><div class="stat-label">Questions</div><div class="stat-value">${STATE.questions.length}</div><div class="stat-sub">In question bank</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">📚 Subjects</div></div>
+      ${SUBJECTS.map(s=>{
+        const sq=STATE.questions.filter(q=>q.subject===s.id);
+        return `<div class="subject-bar" style="margin-bottom:14px">
+          <div class="subject-name"><span style="color:${s.color}">●</span> ${s.short}</div>
+          <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${Math.min(100,sq.length/s.count*100)}%;background:${s.color}"></div></div>
+          <div style="font-size:12px;color:var(--text2);width:50px;text-align:right">${sq.length}/${s.count}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚡ Quick Start</div></div>
+      <div style="font-size:14px;color:var(--text2);margin-bottom:20px">Full exam simulation: 40 questions across all subjects in 3 hours.</div>
+      ${last?`<div style="background:var(--bg3);border-radius:var(--radius);padding:12px;margin-bottom:16px;font-size:13px">
+        <div class="text-hint text-xs">Last attempt</div>
+        <div class="flex items-center justify-between mt-1">
+          <span class="text-muted">${new Date(last.date).toLocaleDateString()}</span>
+          <span style="font-weight:700;color:${last.score>=70?'var(--green)':'var(--amber)'}">${last.score}%</span>
+        </div>
+      </div>`:''}
+      <button class="btn btn-primary btn-full btn-lg" onclick="navigate('start-test')">Start Exam Simulation →</button>
+      ${myAttempts.length?`<button class="btn btn-secondary btn-full mt-2" onclick="navigate('history')">View Past Attempts</button>`:''}
+    </div>
+  </div>`;
+}
+
+// ========== START TEST ==========
+function renderStartTest(){
+  const totalQ=SUBJECTS.reduce((s,sub)=>s+sub.count,0);
+  return `
+  <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">🎯 Exam Simulation</h1>
+  <div class="text-muted text-sm mb-6">GOS State Exam — Full Simulation</div>
+  <div class="grid-2 mb-5">
+    ${SUBJECTS.map(s=>{
+      const q=STATE.questions.filter(x=>x.subject===s.id).length;
+      return `<div class="card card-sm">
+        <div class="flex items-center gap-2 mb-2">
+          <span style="width:10px;height:10px;border-radius:50%;background:${s.color};flex-shrink:0;display:block"></span>
+          <div style="font-size:13px;font-weight:600">${s.short}</div>
+          <span class="badge badge-blue ml-auto" style="margin-left:auto">${s.count} q</span>
+        </div>
+        <div class="progress-bar mt-2"><div class="progress-fill" style="width:${Math.min(100,q/s.count*100)}%;background:${s.color}"></div></div>
+        <div class="text-xs text-hint mt-1">${q} questions available</div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div class="card" style="max-width:500px">
+    <div class="card-header"><div class="card-title">Exam Rules</div></div>
+    <div style="font-size:13.5px;color:var(--text2);display:flex;flex-direction:column;gap:10px">
+      <div>⏱ <strong style="color:var(--text)">3 hours</strong> total time limit</div>
+      <div>📝 <strong style="color:var(--text)">${totalQ} questions</strong> from all subjects</div>
+      <div>🔀 <strong style="color:var(--text)">Randomized</strong> questions and answer order</div>
+      <div>💾 <strong style="color:var(--text)">Auto-saved</strong> — safe to refresh</div>
+      <div>♾️ <strong style="color:var(--text)">Unlimited</strong> attempts allowed</div>
+      <div>⚡ Timer auto-submits when time expires</div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-primary btn-full btn-lg" onclick="startTest()">Begin Exam →</button>
+  </div>`;
+}
+
+function startTest(){
+  const allQ=[];
+  SUBJECTS.forEach(s=>{
+    const sq=STATE.questions.filter(q=>q.subject===s.id);
+    const shuffled=sq.sort(()=>Math.random()-.5).slice(0,s.count);
+    allQ.push(...shuffled);
+  });
+  if(allQ.length<5){toast('Not enough questions in bank!','error');return;}
+  const testQuestions=allQ.sort(()=>Math.random()-.5).map(q=>({
+    ...q,
+    shuffledOptions:shuffleOptions(q.options,q.correct),
+    userAnswer:null
+  }));
+  STATE.activeTest={
+    id:Date.now(),
+    questions:testQuestions,
+    startTime:Date.now(),
+    timeLimit:3*60*60*1000,
+    timeLeft:3*60*60,
+  };
+  STATE.currentQ=0;
+  STATE.page='test';
+  ssSet('gos_active_test',STATE.activeTest);
+  render();
+}
+
+function shuffleOptions(opts,correct){
+  const indices=[0,1,2,3,4].sort(()=>Math.random()-.5);
+  return{order:indices,correctIdx:indices.indexOf(correct)};
+}
+
+// ========== TEST MODE ==========
+let testTimer=null;
+function renderTest(){
+  const t=STATE.activeTest;
+  const q=t.questions[STATE.currentQ];
+  const total=t.questions.length;
+  const answered=t.questions.filter(x=>x.userAnswer!==null).length;
+  const tl=t.timeLeft;
+  const h=Math.floor(tl/3600),m=Math.floor((tl%3600)/60),s=tl%60;
+  const timeStr=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const timerClass=tl<300?'test-timer danger':tl<900?'test-timer warning':'test-timer';
+  const sub=SUBJECTS.find(x=>x.id===q.subject);
+  const displayOpts=q.shuffledOptions.order.map(i=>q.options[i]);
+
+  return `
+  <div class="test-shell">
+    <div class="test-header">
+      <div class="flex items-center gap-4">
+        <div class="font-bold" style="font-size:15px">📐 GOS Exam</div>
+        <div class="text-muted text-sm">${answered}/${total} answered</div>
+      </div>
+      <div class="${timerClass}" id="test-timer">${timeStr}</div>
+      <button class="btn btn-danger btn-sm" onclick="confirmSubmit()">Submit Exam</button>
+    </div>
+    <div class="test-body">
+      <div class="q-nav" id="q-nav">
+        ${t.questions.map((qq,i)=>`<div class="q-dot${i===STATE.currentQ?' current':qq.userAnswer!==null?' answered':''}" onclick="jumpTo(${i})">${i+1}</div>`).join('')}
+      </div>
+      <div class="question-card" id="q-card">
+        <div class="q-header">
+          <div class="q-num">Q${STATE.currentQ+1} / ${total}</div>
+          <div class="q-subject-badge" style="background:${sub.color}22;color:${sub.color}">${sub.short}</div>
+        </div>
+        <div class="q-body katex-render" id="q-body">${q.question}</div>
+        ${q.image?`<img class="q-img" src="${q.image}" alt="Question image">`:''}
+        <div class="options" id="options">
+          ${displayOpts.map((opt,i)=>{
+            const isSelected=q.userAnswer===i;
+            return `<div class="option${isSelected?' selected':''}" onclick="selectAnswer(${i})">
+              <div class="option-letter">${'ABCDE'[i]}</div>
+              <div class="option-text katex-render">${opt}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+      <div class="flex justify-between mt-4">
+        <button class="btn btn-secondary" onclick="jumpTo(${Math.max(0,STATE.currentQ-1)})" ${STATE.currentQ===0?'disabled':''}>← Previous</button>
+        ${STATE.currentQ<total-1
+          ?`<button class="btn btn-primary" onclick="jumpTo(${STATE.currentQ+1})">Next →</button>`
+          :`<button class="btn btn-success" onclick="confirmSubmit()">Submit Exam ✓</button>`
+        }
+      </div>
+    </div>
+  </div>`;
+}
+
+function attachTest(){
+  renderLatex();
+  if(testTimer)clearInterval(testTimer);
+  testTimer=setInterval(()=>{
+    if(!STATE.activeTest)return clearInterval(testTimer);
+    STATE.activeTest.timeLeft--;
+    ssSet('gos_active_test',STATE.activeTest);
+    const el=document.getElementById('test-timer');
+    if(el){
+      const tl=STATE.activeTest.timeLeft;
+      if(tl<=0){clearInterval(testTimer);submitTest();return;}
+      const h=Math.floor(tl/3600),m=Math.floor((tl%3600)/60),s=tl%60;
+      el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      el.className=tl<300?'test-timer danger':tl<900?'test-timer warning':'test-timer';
+    }else{clearInterval(testTimer);}
+  },1000);
+}
+
+function selectAnswer(idx){
+  if(!STATE.activeTest)return;
+  STATE.activeTest.questions[STATE.currentQ].userAnswer=idx;
+  ssSet('gos_active_test',STATE.activeTest);
+  const opts=document.querySelectorAll('.option');
+  opts.forEach((o,i)=>o.classList.toggle('selected',i===idx));
+  const nav=document.querySelectorAll('.q-dot');
+  if(nav[STATE.currentQ])nav[STATE.currentQ].className=`q-dot current answered`;
+}
+
+function jumpTo(i){
+  STATE.currentQ=i;
+  const p=document.getElementById('app');
+  if(testTimer)clearInterval(testTimer);
+  p.innerHTML=renderTest();attachTest();
+}
+
+function confirmSubmit(){
+  const t=STATE.activeTest;
+  const unanswered=t.questions.filter(q=>q.userAnswer===null).length;
+  if(unanswered>0){
+    if(!confirm(`${unanswered} questions unanswered. Submit anyway?`))return;
+  }
+  submitTest();
+}
+
+function submitTest(){
+  if(testTimer)clearInterval(testTimer);
+  const t=STATE.activeTest;
+  const results=t.questions.map(q=>{
+    const correctDisplayIdx=q.shuffledOptions.correctIdx;
+    const isCorrect=q.userAnswer===correctDisplayIdx;
+    return normalizeAttemptResult({...q,correctDisplayIdx,isCorrect});
+  });
+  const total=results.length;
+  const correct=results.filter(r=>r.isCorrect).length;
+  const score=Math.round(correct/total*100);
+  const subjectScores={};
+  SUBJECTS.forEach(s=>{
+    const sq=results.filter(r=>r.subject===s.id);
+    subjectScores[s.id]={correct:sq.filter(r=>r.isCorrect).length,total:sq.length};
+  });
+  const attempt={id:Date.now(),userId:STATE.user.id,date:new Date().toISOString(),score,correct,total,subjectScores,results};
+  STATE.attempts.push(attempt);
+  STATE.activeTest=null;
+  STATE.selectedAttempt=attempt;
+  STATE.page='result';
+  saveAttempt(attempt).catch(console.error);
+  render();
+}
+
+// ========== RESULT ==========
+function renderResult(){
+  const a=STATE.selectedAttempt;
+  if(!a)return '<div>No result found</div>';
+  const grade=a.score>=80?{label:'Excellent',color:'var(--green)'}:a.score>=65?{label:'Good',color:'var(--accent2)'}:a.score>=50?{label:'Satisfactory',color:'var(--amber)'}:{label:'Needs Work',color:'var(--red)'};
+  return `
+  <div class="flex items-center gap-3 mb-6">
+    <button class="btn btn-secondary btn-sm" onclick="navigate('history')">← Back</button>
+    <h1 style="font-size:20px;font-weight:700">Exam Results</h1>
+  </div>
+  <div class="result-header">
+    <div class="result-score">${a.score}%</div>
+    <div class="result-label">${a.correct} / ${a.total} correct · <span style="color:${grade.color}">${grade.label}</span></div>
+    <div class="text-hint text-sm mt-2">${new Date(a.date).toLocaleString()}</div>
+  </div>
+  <div class="grid-2 mb-5">
+    <div class="card">
+      <div class="card-title mb-4">Score by Subject</div>
+      ${SUBJECTS.map(s=>{
+        const ss=a.subjectScores[s.id]||{correct:0,total:0};
+        const pct=ss.total?Math.round(ss.correct/ss.total*100):0;
+        return `<div class="subject-bar" style="margin-bottom:14px">
+          <div class="subject-name" style="font-size:12.5px"><span style="color:${s.color}">●</span> ${s.short}</div>
+          <div class="progress-bar" style="flex:1"><div class="progress-fill" style="width:${pct}%;background:${pct>=70?'var(--green)':pct>=50?'var(--amber)':'var(--red)'}"></div></div>
+          <div class="subject-score-text">${ss.correct}/${ss.total}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title mb-4">Summary</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="flex justify-between"><span class="text-muted">Total Questions</span><strong>${a.total}</strong></div>
+        <div class="flex justify-between"><span class="text-muted">Correct</span><strong style="color:var(--green)">${a.correct}</strong></div>
+        <div class="flex justify-between"><span class="text-muted">Incorrect</span><strong style="color:var(--red)">${a.total-a.correct}</strong></div>
+        <div class="flex justify-between"><span class="text-muted">Score</span><strong style="font-size:18px">${a.score}%</strong></div>
+        <div class="flex justify-between"><span class="text-muted">Grade</span><span class="badge" style="background:${grade.color}22;color:${grade.color}">${grade.label}</span></div>
+      </div>
+      <div class="divider"></div>
+      <button class="btn btn-primary btn-full" onclick="startTest()">Retake Exam</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">Full Review</div><div class="text-hint text-sm">${a.results.length} questions</div></div>
+    ${a.results.map((r,i)=>{
+      const sub=SUBJECTS.find(s=>s.id===r.subject);
+      const userOpt=r.userAnswer!==null?r.shuffledOptions.order[r.userAnswer]:null;
+      const correctOpt=r.shuffledOptions.order[r.correctDisplayIdx];
+      const displayOpts=r.shuffledOptions.order.map(idx=>r.options[idx]);
+      return `<div class="review-card ${r.isCorrect?'right':'wrong'}" style="margin-bottom:12px">
+        <div class="flex items-center gap-2 mb-2">
+          <span style="font-size:13px;font-weight:700;color:var(--text2)">Q${i+1}</span>
+          <span style="font-size:11px;padding:2px 8px;border-radius:12px;background:${sub.color}22;color:${sub.color}">${sub.short}</span>
+          <span class="badge ${r.isCorrect?'badge-green':'badge-red'}" style="margin-left:auto">${r.isCorrect?'✓ Correct':'✗ Wrong'}</span>
+        </div>
+        <div class="q-body katex-render" style="font-size:14px;margin-bottom:12px">${r.question}</div>
+        ${r.image?`<img class="q-img" src="${r.image}" alt="">`:''}
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${displayOpts.map((opt,di)=>{
+            const origIdx=r.shuffledOptions.order[di];
+            const isUserAns=r.userAnswer===di;
+            const isCorrectAns=di===r.correctDisplayIdx;
+            let cls='',style='';
+            if(isCorrectAns){cls='correct';style='border-color:var(--green)'}
+            else if(isUserAns&&!isCorrectAns){cls='incorrect';style='border-color:var(--red)'}
+            return `<div class="option ${cls}" style="cursor:default;${style}">
+              <div class="option-letter">${'ABCDE'[di]}</div>
+              <div class="option-text katex-render" style="font-size:13px">${opt}${isUserAns&&!isCorrectAns?' ← your answer':''}${isCorrectAns?' ✓ correct':''}</div>
+            </div>`;
+          }).join('')}
+        </div>
+        ${r.chapter?`<div class="q-chapter"><strong style="color:var(--amber)">📖 Chapter / note:</strong> <span class="katex-render">${r.chapter}</span></div>`:''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ========== PROGRESS ==========
+function renderProgress(){
+  const uid=STATE.user.id;
+  const myAttempts=STATE.attempts.filter(a=>a.userId===uid).slice(-20);
+  const lastTenAttempts=myAttempts.slice(-10);
+  const chapterStats={};
+  lastTenAttempts.forEach(a=>{
+    if(!Array.isArray(a.results))return;
+    a.results.forEach(r=>{
+      const chapter=((r.chapter||'')+'').trim();
+      if(!chapter)return;
+      if(!chapterStats[chapter])chapterStats[chapter]={correct:0,total:0};
+      chapterStats[chapter].total++;
+      if(r.isCorrect)chapterStats[chapter].correct++;
+    });
+  });
+  const chapterEntries=Object.entries(chapterStats).map(([name,stats])=>{
+    const pct=stats.total?Math.round(stats.correct/stats.total*100):0;
+    return{name,pct,total:stats.total,correct:stats.correct};
+  });
+  const strongChapters=chapterEntries.filter(c=>c.total>=2).sort((a,b)=>b.pct-a.pct||b.total-a.total).slice(0,5);
+  const weakChapters=chapterEntries.filter(c=>c.total>=2).sort((a,b)=>a.pct-b.pct||b.total-a.total).slice(0,5);
+  return `
+  <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">📈 Progress Tracking</h1>
+  <div class="text-muted text-sm mb-6">Track your improvement over time</div>
+  ${myAttempts.length===0?`<div class="card" style="text-align:center;padding:40px">
+    <div style="font-size:36px;margin-bottom:12px">📊</div>
+    <div class="text-muted">No attempts yet. Take your first exam!</div>
+    <button class="btn btn-primary mt-4" onclick="navigate('start-test')">Start Exam</button>
+  </div>`:`
+  <div class="card mb-5">
+    <div class="card-title mb-4">Score Trend</div>
+    <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title mb-4">Subject Performance</div>
+    ${SUBJECTS.map(s=>{
+      const scores=myAttempts.map(a=>{
+        const ss=a.subjectScores[s.id];
+        return ss&&ss.total?Math.round(ss.correct/ss.total*100):null;
+      }).filter(x=>x!==null);
+      if(!scores.length)return `<div class="subject-bar mb-4"><div class="subject-name">${s.short}</div><div class="text-hint text-xs">No data</div></div>`;
+      const avg=Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+      const trend=scores.length>1?scores[scores.length-1]-scores[scores.length-2]:0;
+      return `<div style="margin-bottom:18px">
+        <div class="flex items-center gap-2 mb-2">
+          <span style="color:${s.color}">●</span>
+          <span style="font-size:13px;font-weight:600">${s.short}</span>
+          <span style="font-size:13px;color:${avg>=70?'var(--green)':avg>=50?'var(--amber)':'var(--red)'};font-weight:700;margin-left:auto">${avg}%</span>
+          ${trend!==0?`<span style="font-size:12px;color:${trend>0?'var(--green)':'var(--red)'}">${trend>0?'▲':'▼'}${Math.abs(trend)}%</span>`:''}
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${avg}%;background:${avg>=70?'var(--green)':avg>=50?'var(--amber)':'var(--red)'}"></div></div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div class="grid-2 mt-5">
+    <div class="card">
+      <div class="card-title mb-4">✅ Strong Chapters (last 10 exams)</div>
+      ${strongChapters.length?strongChapters.map(ch=>`
+        <div style="margin-bottom:14px">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-muted" style="font-size:13px">${ch.name}</span>
+            <span style="margin-left:auto;color:var(--green);font-weight:700">${ch.pct}%</span>
+            <span class="text-hint text-xs">(${ch.correct}/${ch.total})</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill green" style="width:${ch.pct}%"></div></div>
+        </div>
+      `).join(''):`<div class="text-muted">No chapter data for last 10 exams.</div>`}
+    </div>
+    <div class="card">
+      <div class="card-title mb-4">⚠️ Weak Chapters (need work, last 10 exams)</div>
+      ${weakChapters.length?weakChapters.map(ch=>`
+        <div style="margin-bottom:14px">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-muted" style="font-size:13px">${ch.name}</span>
+            <span style="margin-left:auto;color:${ch.pct<50?'var(--red)':'var(--amber)'};font-weight:700">${ch.pct}%</span>
+            <span class="text-hint text-xs">(${ch.correct}/${ch.total})</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill ${ch.pct<50?'red':'amber'}" style="width:${ch.pct}%"></div></div>
+        </div>
+      `).join(''):`<div class="text-muted">No chapter data for last 10 exams.</div>`}
+    </div>
+  </div>
+  <div class="text-hint text-xs mt-3">Chapters are calculated from answered questions with a filled "chapter" field.</div>`}`;
+}
+
+// ========== HISTORY ==========
+function renderHistory(){
+  const uid=STATE.user.id;
+  const myAttempts=STATE.attempts.filter(a=>a.userId===uid).reverse();
+  return `
+  <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">📋 Test History</h1>
+  <div class="text-muted text-sm mb-6">${myAttempts.length} attempts total</div>
+  ${myAttempts.length===0?`<div class="card" style="text-align:center;padding:40px">
+    <div class="text-muted">No history yet.</div>
+    <button class="btn btn-primary mt-4" onclick="navigate('start-test')">Take First Exam</button>
+  </div>`:`
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Date</th><th>Score</th><th>Correct</th><th>Grade</th><th></th></tr></thead>
+        <tbody>
+          ${myAttempts.map((a,i)=>{
+            const g=a.score>=80?'Excellent':a.score>=65?'Good':a.score>=50?'Fair':'Needs Work';
+            const gc=a.score>=80?'badge-green':a.score>=65?'badge-blue':a.score>=50?'badge-amber':'badge-red';
+            return `<tr>
+              <td class="text-hint">${myAttempts.length-i}</td>
+              <td>${new Date(a.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+              <td><strong style="color:${a.score>=70?'var(--green)':a.score>=50?'var(--amber)':'var(--red)'}">${a.score}%</strong></td>
+              <td class="text-muted">${a.correct}/${a.total}</td>
+              <td><span class="badge ${gc}">${g}</span></td>
+              <td><button class="btn btn-secondary btn-sm" onclick="viewAttempt(${a.id})">Review</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`}`;
+}
+
+function viewAttempt(id){
+  const a=STATE.attempts.find(x=>x.id===id);
+  if(!a)return;
+  STATE.selectedAttempt=a;
+  STATE.page='result';
+  render();
+}
+
+// ========== ADMIN DASHBOARD ==========
+function renderAdminDash(){
+  const allAttempts=STATE.attempts;
+  const avgScore=allAttempts.length?Math.round(allAttempts.reduce((s,a)=>s+a.score,0)/allAttempts.length):0;
+  const students=STATE.users.filter(u=>u.role==='student');
+  return `
+  <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">⊞ Admin Dashboard</h1>
+  <div class="text-muted text-sm mb-6">Platform overview</div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Students</div><div class="stat-value">${students.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Questions</div><div class="stat-value">${STATE.questions.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Attempts</div><div class="stat-value">${allAttempts.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Score</div><div class="stat-value">${avgScore}%</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title mb-4">Question Bank Status</div>
+      ${SUBJECTS.map(s=>{
+        const q=STATE.questions.filter(x=>x.subject===s.id);
+        const pct=Math.min(100,Math.round(q.length/s.count*100));
+        return `<div style="margin-bottom:14px">
+          <div class="flex justify-between mb-1">
+            <span style="font-size:13px;color:var(--text2)">${s.short}</span>
+            <span style="font-size:13px;font-weight:600">${q.length}/${s.count}</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${s.color}"></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title mb-4">Quick Actions</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-secondary btn-full" onclick="navigate('questions')">📚 Manage Questions</button>
+        <button class="btn btn-secondary btn-full" onclick="navigate('import')">📥 Import Questions</button>
+        <button class="btn btn-secondary btn-full" onclick="navigate('students')">👥 View Students</button>
+        <button class="btn btn-secondary btn-full" onclick="navigate('analytics')">📊 Analytics</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ========== QUESTIONS PAGE ==========
+function renderQuestionsPage(){
+  let qs=STATE.questions;
+  if(STATE.filterSubject!=='all')qs=qs.filter(q=>q.subject===STATE.filterSubject);
+  if(STATE.searchQ)qs=qs.filter(q=>q.question.toLowerCase().includes(STATE.searchQ.toLowerCase()));
+  return `
+  <div class="flex items-center justify-between mb-5">
+    <div><h1 style="font-size:20px;font-weight:700">📚 Question Bank</h1>
+    <div class="text-hint text-sm">${STATE.questions.length} total questions</div></div>
+    <button class="btn btn-primary" onclick="newQuestion()">+ Add Question</button>
+  </div>
+  <div class="flex gap-3 mb-5">
+    <div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span>
+      <input class="search-input" placeholder="Search questions…" value="${STATE.searchQ}" oninput="STATE.searchQ=this.value;navigate('questions')">
+    </div>
+    <select class="field" style="width:200px;margin:0" onchange="STATE.filterSubject=this.value;navigate('questions')">
+      <option value="all" ${STATE.filterSubject==='all'?'selected':''}>All Subjects</option>
+      ${SUBJECTS.map(s=>`<option value="${s.id}" ${STATE.filterSubject===s.id?'selected':''}>${s.short}</option>`).join('')}
+    </select>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>Question</th><th>Subject</th><th>Has Image</th><th></th></tr></thead>
+        <tbody>
+          ${qs.length===0?`<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">No questions found</td></tr>`:''}
+          ${qs.map(q=>{
+            const sub=SUBJECTS.find(s=>s.id===q.subject);
+            return `<tr>
+              <td class="text-hint font-mono">#${q.id}</td>
+              <td style="max-width:320px"><div class="truncate katex-render" style="font-size:13px">${q.question.replace(/\$.+?\$/g,'[formula]')}</div></td>
+              <td><span style="font-size:11px;padding:3px 8px;border-radius:12px;background:${sub?.color||'#fff'}22;color:${sub?.color||'#fff'}">${sub?.short||q.subject}</span></td>
+              <td>${q.image?'<span class="badge badge-blue">📷 Yes</span>':'<span class="text-hint text-xs">—</span>'}</td>
+              <td>
+                <div class="flex gap-2">
+                  <button class="btn btn-secondary btn-sm" onclick="editQuestion(${q.id})">Edit</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteQuestion(${q.id})">Delete</button>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function newQuestion(){
+  STATE.editingQuestion={id:Date.now(),subject:'math',question:'',image:null,options:['','','','',''],correct:0,chapter:''};
+  STATE.page='edit-question';render();
+}
+function editQuestion(id){
+  const q=STATE.questions.find(x=>x.id===id);
+  if(!q)return;
+  STATE.editingQuestion={...q,options:[...q.options]};
+  STATE.page='edit-question';render();
+}
+function deleteQuestion(id){
+  if(!confirm('Delete this question?'))return;
+  STATE.questions=STATE.questions.filter(q=>q.id!==id);
+  saveQuestions().catch(console.error);
+  render();toast('Question deleted','info');
+}
+
+// ========== EDIT QUESTION ==========
+function renderEditQuestion(){
+  const q=STATE.editingQuestion;
+  const isNew=!STATE.questions.find(x=>x.id===q.id);
+  return `
+  <div class="flex items-center gap-3 mb-5">
+    <button class="btn btn-secondary btn-sm" onclick="navigate('questions')">← Back</button>
+    <h1 style="font-size:18px;font-weight:700">${isNew?'Add Question':'Edit Question'}</h1>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div class="card mb-4">
+        <div class="card-title mb-4">Question Details</div>
+        <div class="field">
+          <label>Subject</label>
+          <select id="eq-subject">
+            ${SUBJECTS.map(s=>`<option value="${s.id}" ${q.subject===s.id?'selected':''}>${s.name}</option>`).join('')}
+          </select>
+        </div>
+        <div class="field">
+          <label>Question text (supports LaTeX with $…$ or $$…$$)</label>
+          <textarea id="eq-question" rows="4" oninput="updateLatexPreview()">${q.question}</textarea>
+          <div id="latex-preview" class="latex-preview katex-render mt-2" style="font-size:14px">${q.question||'Preview will appear here…'}</div>
+        </div>
+        <div class="field">
+          <label>Image URL (optional)</label>
+          <input id="eq-image" placeholder="https://… or paste data:image/…" value="${q.image||''}">
+          ${q.image?`<img src="${q.image}" class="q-img mt-2" style="max-height:120px">`:''}
+        </div>
+        <div class="field">
+          <label>Image Upload (PNG/JPG)</label>
+          <input type="file" id="eq-file" accept="image/*" onchange="handleImageUpload(event)">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title mb-4">Chapter / note (optional)</div>
+        <div class="field" style="margin:0">
+          <label class="text-hint text-xs" style="display:block;margin-bottom:6px">Stored in Supabase as column <code>explanation</code></label>
+          <textarea id="eq-chapter" rows="3" placeholder="e.g. chapter 1.2 — used for progress and review…">${q.chapter||''}</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title mb-4">Answer Options (A–E)</div>
+      <div style="margin-bottom:12px;font-size:12.5px;color:var(--text2)">Select the radio button for the correct answer</div>
+      ${q.options.map((opt,i)=>`
+        <div class="option-row" style="margin-bottom:12px;align-items:flex-start">
+          <input type="radio" name="correct" value="${i}" ${q.correct===i?'checked':''} style="margin-top:10px;cursor:pointer">
+          <div class="option-tag">${'ABCDE'[i]}</div>
+          <div style="flex:1">
+            <input id="eq-opt-${i}" value="${opt}" placeholder="Option ${'ABCDE'[i]}…" style="width:100%">
+            <div class="latex-preview katex-render mt-1" id="opt-preview-${i}" style="min-height:24px;padding:6px 10px;font-size:13px">${opt}</div>
+          </div>
+        </div>
+      `).join('')}
+      <div class="divider"></div>
+      <button class="btn btn-primary btn-full" onclick="saveQuestion()">
+        ${isNew?'Add Question':'Save Changes'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function updateLatexPreview(){
+  const v=document.getElementById('eq-question')?.value||'';
+  const el=document.getElementById('latex-preview');
+  if(el){el.textContent=v;renderLatex([el]);}
+}
+
+function handleImageUpload(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    STATE.editingQuestion.image=ev.target.result;
+    render();
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveQuestion(){
+  const q=STATE.editingQuestion;
+  q.subject=document.getElementById('eq-subject').value;
+  q.question=document.getElementById('eq-question').value.trim();
+  q.image=document.getElementById('eq-image').value.trim()||q.image||null;
+  q.chapter=document.getElementById('eq-chapter').value.trim();
+  q.options=[0,1,2,3,4].map(i=>document.getElementById(`eq-opt-${i}`)?.value.trim()||'');
+  const radios=document.querySelectorAll('input[name="correct"]');
+  radios.forEach(r=>{if(r.checked)q.correct=parseInt(r.value);});
+  if(!q.question){toast('Question text required','error');return;}
+  if(q.options.some(o=>!o)){toast('All 5 options required','error');return;}
+  const idx=STATE.questions.findIndex(x=>x.id===q.id);
+  if(idx>=0)STATE.questions[idx]={...q};
+  else STATE.questions.push({...q});
+  saveQuestions().catch(console.error);
+  toast('Question saved','success');navigate('questions');
+}
+
+// ========== IMPORT ==========
+function renderImport(){
+  const log=STATE.importLog;
+  return `
+  <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">📥 Import Questions</h1>
+  <div class="text-muted text-sm mb-6">Bulk import via JSON or CSV</div>
+  <div class="grid-2">
+    <div>
+      <div class="card mb-4">
+        <div class="card-title mb-3">Upload File</div>
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('import-file').click()">
+          <div class="drop-zone-icon">📂</div>
+          <div style="font-weight:600;font-size:15px">Drop file here or click to browse</div>
+          <div class="text-hint text-sm mt-2">Supports JSON and CSV</div>
+          <input type="file" id="import-file" accept=".json,.csv" style="display:none" onchange="handleImport(event)">
+        </div>
+        ${log.length?`<div class="import-log">${log.map(l=>`<div class="log-${l.type}">${l.msg}</div>`).join('')}</div>`:''}
+      </div>
+      <div class="card">
+        <div class="card-title mb-3">Paste JSON</div>
+        <textarea id="json-paste" style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius);padding:10px;color:var(--text);font-family:monospace;font-size:12px;min-height:140px;outline:none" placeholder='[{"subject":"math","question":"...","options":["A","B","C","D","E"],"correct":0}]'></textarea>
+        <button class="btn btn-primary mt-3 btn-full" onclick="importFromPaste()">Import JSON</button>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title mb-3">Format Reference</div>
+        <div class="text-muted text-sm mb-3">JSON array of objects:</div>
+        <pre style="background:var(--bg3);border-radius:var(--radius);padding:14px;font-size:12px;color:var(--text2);overflow:auto;line-height:1.6">{
+  "subject": "linalg",
+  "question": "Solve: $Ax = b$",
+  "image": null,
+  "options": [
+    "Option A",
+    "Option B",
+    "Option C",
+    "Option D",
+    "Option E"
+  ],
+  "correct": 2,
+  "chapter": "optional (saved as explanation in DB)"
+}</pre>
+        <div class="divider"></div>
+        <div class="text-muted text-sm mb-2">Subject IDs:</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          ${SUBJECTS.map(s=>`<div class="flex justify-between"><code style="font-size:12px;color:var(--accent2)">${s.id}</code><span class="text-hint text-xs">${s.short}</span></div>`).join('')}
+        </div>
+        <div class="divider"></div>
+        <div class="text-muted text-sm mb-2">CSV format:</div>
+        <pre style="background:var(--bg3);border-radius:var(--radius);padding:10px;font-size:11px;color:var(--text2);overflow:auto">subject,question,optA,optB,optC,optD,optE,correct,chapter
+math,"Find $f'(x)$","$2x$","$x^2$","$x$","$2$","$0$",0,"ch. 3 — derivatives"</pre>
+      </div>
+    </div>
+  </div>`;
+}
+
+function handleImport(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const content=ev.target.result;
+    if(file.name.endsWith('.json'))parseAndImportJSON(content);
+    else if(file.name.endsWith('.csv'))parseAndImportCSV(content);
+    else toast('Unsupported format','error');
+  };
+  reader.readAsText(file);
+}
+
+function importFromPaste(){
+  const text=document.getElementById('json-paste').value.trim();
+  if(!text){toast('Paste JSON first','error');return;}
+  parseAndImportJSON(text);
+}
+
+function parseAndImportJSON(text){
+  STATE.importLog=[];
+  let data;
+  try{data=JSON.parse(text);}catch(e){STATE.importLog=[{type:'err',msg:`❌ Invalid JSON: ${e.message}`}];render();return;}
+  if(!Array.isArray(data)){
+    if(data&&Array.isArray(data.questions))data=data.questions;
+    else data=[data];
+  }
+  let ok=0,skip=0;
+  data.forEach((item,i)=>{
+    const result=validateAndAdd(item,i);
+    if(result.ok){ok++;STATE.importLog.push({type:'ok',msg:`✓ Q${i+1}: "${item.question?.slice(0,40)}…" → ${item.subject}`});}
+    else{skip++;STATE.importLog.push({type:'err',msg:`✗ Q${i+1}: ${result.error}`});}
+  });
+  STATE.importLog.unshift({type:'warn',msg:`📊 Import complete: ${ok} added, ${skip} skipped`});
+  saveQuestions().catch(console.error);
+  render();toast(`Imported ${ok} questions`,'success');
+}
+
+function parseAndImportCSV(text){
+  STATE.importLog=[];
+  const lines=text.trim().split('\n');
+  if(lines.length<2){STATE.importLog=[{type:'err',msg:'CSV is empty'}];render();return;}
+  let ok=0,skip=0;
+  for(let i=1;i<lines.length;i++){
+    const cols=lines[i].split(',').map(c=>c.trim().replace(/^"|"$/g,''));
+    if(cols.length<8){STATE.importLog.push({type:'err',msg:`Row ${i}: Not enough columns`});skip++;continue;}
+    const item={subject:cols[0],question:cols[1],options:[cols[2],cols[3],cols[4],cols[5],cols[6]],correct:parseInt(cols[7])||0,chapter:cols[8]||''};
+    const result=validateAndAdd(item,i);
+    if(result.ok){ok++;STATE.importLog.push({type:'ok',msg:`✓ Row ${i}: Added`});}
+    else{skip++;STATE.importLog.push({type:'err',msg:`✗ Row ${i}: ${result.error}`});}
+  }
+  STATE.importLog.unshift({type:'warn',msg:`📊 CSV Import: ${ok} added, ${skip} skipped`});
+  saveQuestions().catch(console.error);
+  render();toast(`Imported ${ok} questions`,'success');
+}
+
+function validateAndAdd(item,i){
+  if(!item.question||!item.question.trim())return{ok:false,error:'Missing question'};
+  if(!item.subject||!SUBJECTS.find(s=>s.id===item.subject))return{ok:false,error:`Invalid subject: "${item.subject}"`};
+  if(!Array.isArray(item.options)||item.options.length!==5)return{ok:false,error:'Must have exactly 5 options'};
+  if(item.options.some(o=>!o||!o.toString().trim()))return{ok:false,error:'All 5 options must be non-empty'};
+  const correct=parseInt(item.correct);
+  if(isNaN(correct)||correct<0||correct>4)return{ok:false,error:'correct must be 0–4'};
+  const chapter=(item.chapter??item.explanation??'').toString().trim();
+  const newQ={id:Date.now()+i+Math.random(),subject:item.subject,question:item.question.trim(),image:item.image||null,options:item.options.map(o=>o.toString().trim()),correct,chapter};
+  STATE.questions.push(newQ);
+  return{ok:true};
+}
+
+// ========== STUDENTS ==========
+function renderStudents(){
+  const students=STATE.users.filter(u=>u.role==='student');
+  return `
+  <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">👥 Students</h1>
+  <div class="text-muted text-sm mb-6">${students.length} registered students</div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Username</th><th>Attempts</th><th>Avg Score</th><th>Best</th></tr></thead>
+        <tbody>
+          ${students.length===0?`<tr><td colspan="5" style="text-align:center;color:var(--text3)">No students yet</td></tr>`:''}
+          ${students.map(s=>{
+            const att=STATE.attempts.filter(a=>a.userId===s.id);
+            const avg=att.length?Math.round(att.reduce((x,a)=>x+a.score,0)/att.length):'-';
+            const best=att.length?Math.max(...att.map(a=>a.score)):'-';
+            return `<tr>
+              <td><div class="flex items-center gap-2"><div class="user-avatar" style="width:28px;height:28px;font-size:11px">${s.name[0]}</div>${s.name}</div></td>
+              <td class="font-mono text-sm">${s.username}</td>
+              <td>${att.length}</td>
+              <td>${avg==='- '?'-':`<strong style="color:${avg>=70?'var(--green)':avg>=50?'var(--amber)':'var(--red)'}">${avg}%</strong>`}</td>
+              <td>${best==='- '?'-':`${best}%`}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// ========== ANALYTICS ==========
+function renderAnalytics(){
+  const all=STATE.attempts;
+  const hardest=[];
+  if(all.length){
+    const qStats={};
+    all.forEach(a=>{
+      a.results.forEach(r=>{
+        if(!qStats[r.id])qStats[r.id]={id:r.id,text:r.question,wrong:0,total:0};
+        qStats[r.id].total++;
+        if(!r.isCorrect)qStats[r.id].wrong++;
+      });
+    });
+    Object.values(qStats).sort((a,b)=>b.wrong/b.total-a.wrong/a.total).slice(0,5).forEach(q=>hardest.push(q));
+  }
+  return `
+  <h1 style="font-size:22px;font-weight:700;margin-bottom:6px">📊 Analytics</h1>
+  <div class="text-muted text-sm mb-6">Platform performance overview</div>
+  ${all.length===0?`<div class="card" style="text-align:center;padding:40px"><div class="text-muted">No exam data yet</div></div>`:`
+  <div class="grid-2 mb-5">
+    <div class="card">
+      <div class="card-title mb-4">Average Score by Subject</div>
+      ${SUBJECTS.map(s=>{
+        const scores=all.map(a=>{const ss=a.subjectScores[s.id];return ss&&ss.total?ss.correct/ss.total*100:null;}).filter(x=>x!==null);
+        const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+        return `<div style="margin-bottom:14px">
+          <div class="flex justify-between mb-1"><span style="font-size:13px;color:var(--text2)">${s.short}</span><strong>${avg}%</strong></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${avg}%;background:${s.color}"></div></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title mb-4">Score Distribution</div>
+      <div class="chart-wrap"><canvas id="dist-chart"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title mb-4">Hardest Questions (Most Incorrect)</div>
+    ${hardest.length===0?`<div class="text-hint">Not enough data</div>`:''}
+    ${hardest.map((q,i)=>{
+      const errRate=Math.round(q.wrong/q.total*100);
+      return `<div style="margin-bottom:16px">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="badge badge-red">${errRate}% wrong</span>
+          <span class="text-hint text-xs">${q.total} attempts</span>
+        </div>
+        <div style="font-size:13px;color:var(--text2)">${q.text.replace(/\$.+?\$/g,'[formula]').slice(0,100)}…</div>
+      </div>`;
+    }).join('')}
+  </div>`}`;
+}
+
+// ========== CHART INIT ==========
+function initCharts(){
+  const uid=STATE.user?.id;
+  const p=STATE.page;
+  if(p==='progress'||p==='history'){
+    const myAttempts=STATE.attempts.filter(a=>a.userId===uid).slice(-15);
+    if(myAttempts.length>1){
+      setTimeout(()=>{
+        const canvas=document.getElementById('trend-chart');
+        if(!canvas)return;
+        new Chart(canvas,{type:'line',data:{labels:myAttempts.map((_,i)=>`#${i+1}`),datasets:[{label:'Score %',data:myAttempts.map(a=>a.score),borderColor:'#4f7cff',backgroundColor:'rgba(79,124,255,.1)',tension:.3,fill:true,pointBackgroundColor:'#4f7cff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{min:0,max:100,ticks:{color:'#5c6480'},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#5c6480'},grid:{color:'rgba(255,255,255,.05)'}}}}});
+      },100);
+    }
+  }
+  if(p==='analytics'){
+    const all=STATE.attempts;
+    if(all.length>0){
+      setTimeout(()=>{
+        const canvas=document.getElementById('dist-chart');
+        if(!canvas)return;
+        const ranges=[0,10,20,30,40,50,60,70,80,90];
+        const counts=ranges.map(r=>all.filter(a=>a.score>=r&&a.score<r+10).length);
+        new Chart(canvas,{type:'bar',data:{labels:ranges.map(r=>`${r}-${r+9}%`),datasets:[{label:'# of attempts',data:counts,backgroundColor:'rgba(79,124,255,.7)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{color:'#5c6480',stepSize:1},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#5c6480'},grid:{display:false}}}}});
+      },100);
+    }
+  }
+}
+
+// ========== LATEX ==========
+function renderLatex(els){
+  const targets=els||document.querySelectorAll('.katex-render');
+  if(!window.renderMathInElement)return setTimeout(()=>renderLatex(els),300);
+  targets.forEach(el=>{
+    try{window.renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});}catch(e){}
+  });
+}
+
+// ========== TOAST ==========
+function toast(msg,type='info'){
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<span>${type==='success'?'✓':type==='error'?'✗':'ℹ'}</span><span>${msg}</span>`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.style.opacity='0',2500);
+  setTimeout(()=>t.remove(),2800);
+}
+
+// ========== ATTACH HANDLERS ==========
+function attachMain(){
+  initCharts();
+  // Drag drop
+  const dz=document.getElementById('drop-zone');
+  if(dz){
+    dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+    dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+    dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f){const ev={target:{files:[f]}};handleImport(ev);}});
+  }
+  // Option inputs live preview
+  [0,1,2,3,4].forEach(i=>{
+    const el=document.getElementById(`eq-opt-${i}`);
+    if(el){
+      el.addEventListener('input',()=>{
+        const prev=document.getElementById(`opt-preview-${i}`);
+        if(prev){prev.textContent=el.value;renderLatex([prev]);}
+      });
+    }
+  });
+  setTimeout(renderLatex,100);
+}
+
+// ========== INIT ==========
+initApp();
+</script>
+</body>
+</html>
